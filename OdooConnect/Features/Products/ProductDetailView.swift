@@ -8,9 +8,8 @@ struct ProductDetailView: View {
     @State private var sales30d: SalesSummary?
     @State private var isLoading = false
     @State private var error: String?
-    @State private var editing = false
-    @State private var draftPrice: Double = 0
-    @State private var draftSaleOk: Bool = true
+    @State private var showingEditor = false
+    @State private var showingTransfer = false
 
     var body: some View {
         ScrollView {
@@ -19,9 +18,6 @@ struct ProductDetailView: View {
                     header(product)
                     stockCard(product)
                     salesCard
-                    if editing {
-                        editCard(product)
-                    }
                 }
                 .padding()
             }
@@ -33,17 +29,32 @@ struct ProductDetailView: View {
         .overlay { if isLoading && product == nil { ProgressView() } }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                if let product {
-                    Button(editing ? "Fertig" : "Bearbeiten") {
-                        if editing {
-                            Task { await save(product) }
-                        } else {
-                            draftPrice = product.list_price
-                            draftSaleOk = product.sale_ok
-                            editing = true
-                        }
+                if product != nil {
+                    Menu {
+                        Button("Bearbeiten", systemImage: "pencil") { showingEditor = true }
+                        Button("Umlagern", systemImage: "arrow.left.arrow.right") { showingTransfer = true }
+                    } label: {
+                        Label("Aktionen", systemImage: "ellipsis.circle")
                     }
                 }
+            }
+        }
+        .sheet(isPresented: $showingEditor) {
+            if let product {
+                ProductEditSheet(product: product) {
+                    await load()
+                }
+                .presentationDetents([.large])
+            }
+        }
+        .sheet(isPresented: $showingTransfer) {
+            if let product {
+                NavigationStack {
+                    StockTransferSheet(product: product) {
+                        await load()
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
         }
         .alert("Fehler", isPresented: .constant(error != nil)) {
@@ -142,23 +153,6 @@ struct ProductDetailView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 18))
     }
 
-    private func editCard(_ product: ProductDetail) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Bearbeiten", systemImage: "pencil").font(.headline)
-            HStack {
-                Text("Listenpreis")
-                Spacer()
-                TextField("", value: $draftPrice, format: .number)
-                    .multilineTextAlignment(.trailing)
-                    .keyboardType(.decimalPad)
-                    .frame(maxWidth: 120)
-            }
-            Toggle("Verkaufbar", isOn: $draftSaleOk)
-        }
-        .padding()
-        .glassEffect(.regular, in: .rect(cornerRadius: 18))
-    }
-
     private func load() async {
         guard let client = auth.client else { return }
         isLoading = true
@@ -203,26 +197,6 @@ struct ProductDetailView: View {
             quantity: row?["product_uom_qty"]?.doubleValue ?? 0,
             revenue: row?["price_subtotal"]?.doubleValue ?? 0
         )
-    }
-
-    private func save(_ product: ProductDetail) async {
-        guard let client = auth.client else { return }
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            _ = try await client.write(
-                model: "product.product",
-                ids: [product.id],
-                values: [
-                    "list_price": .double(draftPrice),
-                    "sale_ok": .bool(draftSaleOk)
-                ]
-            )
-            editing = false
-            await load()
-        } catch {
-            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
     }
 }
 

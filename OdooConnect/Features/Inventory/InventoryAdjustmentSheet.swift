@@ -12,6 +12,7 @@ struct InventoryAdjustmentSheet: View {
     @State private var isLoading = false
     @State private var isApplying = false
     @State private var error: String?
+    @State private var showingTransfer = false
 
     var body: some View {
         Form {
@@ -103,8 +104,24 @@ struct InventoryAdjustmentSheet: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Fertig") { dismiss() }
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingTransfer = true
+                } label: {
+                    Label("Umlagern", systemImage: "arrow.left.arrow.right")
+                }
+            }
         }
         .task { await loadQuants() }
+        .sheet(isPresented: $showingTransfer) {
+            NavigationStack {
+                StockTransferSheet(product: product) {
+                    await loadQuants()
+                    await onApplied()
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
         .alert("Fehler", isPresented: .constant(error != nil)) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }

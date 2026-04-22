@@ -5,14 +5,28 @@ Native iOS 26 Universal‑App (iPhone + iPad) für Odoo 19 Enterprise
 
 ## Funktionen
 
-- **Dashboard**: Monatsumsatz, offene Angebote / Bestellungen, offene
-  Forderungen, Umsatzverlauf der letzten 8 Wochen (Swift Charts).
-  Server‑seitig aggregiert via `read_group`.
+- **Dashboard**: Period-Picker (Heute / 7T / 30T / YTD) mit Vergleich
+  zur Vorperiode, 9 KPI-Kacheln (Umsatz, Bestellungen, Ø Warenkorb,
+  neue Kunden, offene Angebote / Lieferungen, Low-Stock,
+  Stornoquote, offene Forderungen), Umsatz-Zeitreihe, Top-5-Produkte,
+  Bestellstatus-Donut, Live-Feed letzte Bestellungen,
+  Low-Stock-Liste mit Deep-Link ins Produkt-Detail.
 - **Angebote**: Liste mit Suche, Erstellen + Bearbeiten lokaler
   Entwürfe, Detailansicht
 - **Bestellungen**: Liste mit Suche und Detail; Apple Pencil
   Unterschrift wird als `ir.attachment` an die Bestellung gehängt
 - **Rechnungen**: Liste mit Suche und Detail mit Zahlungsstatus
+- **Produkte**: Grid (iPad) / Liste (iPhone) mit Stock-Filter,
+  Detail mit Lagerbestand (verfügbar / Prognose / eingehend /
+  ausgehend) und 30-Tage-Verkaufsstatistik. Vollständiger Editor
+  als Sheet (Preise, Artikelnr, Barcode, Beschreibung, Sichtbarkeit).
+- **Versand**: Outgoing `stock.picking` mit State-Filter, Detail
+  mit Move Lines + Tracking. Native Backorder-Bestätigung als Sheet
+  (Versenden + Backorder anlegen / Restbestand verwerfen / Abbrechen).
+- **Inventur**: Barcodescanner (AVFoundation, EAN/UPC/QR/Code128/...),
+  Bestandskorrektur per `stock.quant.action_apply_inventory`,
+  Lagerumlagerung zwischen internen Standorten via
+  internal-transfer Picking inkl. automatischem Move-Line-Prefill.
 - **Offline‑Drafts**: SwiftData persistiert lokal; ein Outbox‑Actor
   pusht beim Online‑Werden automatisch nach Odoo. Idempotent via
   `client_order_ref`, max 5 Retries pro Draft, manueller
@@ -97,12 +111,17 @@ Alle Aufrufe gehen über `POST {baseURL}/jsonrpc`:
 - Dashboard‑Aggregate gehen über die Company‑Default‑Währung; bei
   Mehrwährungs‑Belegen ist der Summenwert grob. Saubere Lösung:
   `read_group` nach `currency_id` → für später
-- Editor unterstützt keine Discounts / Steuern; Odoo wendet
+- Quote-Editor unterstützt keine Discounts / Steuern; Odoo wendet
   Default‑Steuern via `onchange` an
+- Lagerumlagerung legt nur Picking + Move an und bucht via
+  `button_validate`; komplexere Wizards (z.B. Lot/Serial-Nummern)
+  werden nur als Hinweis surfaceiert und müssen im Web abgeschlossen
+  werden
 
 ### Roadmap
 
 - [ ] String Catalog komplett befüllen + EN‑Übersetzung
-- [ ] Discounts, Steuern, Versanddetails im Editor
+- [ ] Discounts, Steuern, Versanddetails im Quote-Editor
 - [ ] Server‑Push via Odoo‑Bot (statt BG‑Polling)
 - [ ] Conflict‑Detection bei parallelen Edits
+- [ ] Lot/Serial-Nummern im Versand- und Inventur-Workflow

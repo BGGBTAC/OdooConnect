@@ -10,6 +10,7 @@ struct ShipmentDetailView: View {
     @State private var isValidating = false
     @State private var error: String?
     @State private var info: String?
+    @State private var showingBackorderSheet = false
 
     var body: some View {
         List {
@@ -98,6 +99,18 @@ struct ShipmentDetailView: View {
         .alert("Hinweis", isPresented: .constant(info != nil)) {
             Button("OK") { info = nil }
         } message: { Text(info ?? "") }
+        .sheet(isPresented: $showingBackorderSheet) {
+            if let picking {
+                BackorderConfirmationSheet(
+                    pickingId: picking.id,
+                    pickingName: picking.name
+                ) { message in
+                    info = message
+                    await load()
+                }
+                .presentationDetents([.medium])
+            }
+        }
     }
 
     private func load() async {
@@ -135,13 +148,18 @@ struct ShipmentDetailView: View {
                 args: [.array([.int(picking.id)])]
             )
             if case .object(let dict) = result,
-               case .string(let type)? = dict["type"],
-               type.hasPrefix("ir.actions") {
-                info = "Odoo fordert eine Backorder-Bestätigung. Bitte in der Weboberfläche abschließen."
+               case .string(let model)? = dict["res_model"],
+               model == "stock.backorder.confirmation" {
+                showingBackorderSheet = true
+            } else if case .object(let dict) = result,
+                      case .string(let type)? = dict["type"],
+                      type.hasPrefix("ir.actions") {
+                info = "Odoo fordert eine zusätzliche Bestätigung (\(dict["res_model"]?.stringValue ?? "Wizard")). Bitte in der Weboberfläche abschließen."
+                await load()
             } else {
                 info = "Lieferung versendet."
+                await load()
             }
-            await load()
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
