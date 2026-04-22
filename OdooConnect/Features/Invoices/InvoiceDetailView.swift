@@ -24,13 +24,13 @@ struct InvoiceDetailView: View {
                     HStack {
                         Text("Gesamt").font(.headline)
                         Spacer()
-                        Text(invoice.amount_total, format: .currency(code: "EUR"))
+                        Text(invoice.amount_total, format: .currency(code: invoice.currency_id.name))
                             .font(.headline.monospacedDigit())
                     }
                     HStack {
                         Text("Offen")
                         Spacer()
-                        Text(invoice.amount_residual, format: .currency(code: "EUR"))
+                        Text(invoice.amount_residual, format: .currency(code: invoice.currency_id.name))
                             .monospacedDigit()
                             .foregroundStyle(invoice.amount_residual > 0 ? .red : .green)
                     }

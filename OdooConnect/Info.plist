@@ -3,7 +3,12 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <string>de</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>de</string>
+        <string>en</string>
+    </array>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -25,5 +30,9 @@
         <key>NSAllowsArbitraryLoads</key>
         <false/>
     </dict>
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.odooconnect.app.refresh</string>
+    </array>
 </dict>
 </plist>

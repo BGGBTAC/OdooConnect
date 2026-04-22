@@ -12,6 +12,8 @@ final class AuthManager {
 
     private(set) var state: State = .signedOut
     private(set) var client: OdooClient?
+    private(set) var company: Company?
+    private(set) var companyCurrency: Currency = .eur
     var lastError: String?
 
     private let configKey = "odoo.config"
@@ -36,6 +38,7 @@ final class AuthManager {
             try persist(config: config, apiKey: apiKey, uid: uid)
             self.client = OdooClient(config: config, apiKey: apiKey, uid: uid)
             self.state = .signedIn(config, uid: uid)
+            await refreshCompanyContext()
         } catch {
             self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             self.state = .signedOut
@@ -47,7 +50,52 @@ final class AuthManager {
         KeychainStore.remove(apiKeyKey)
         KeychainStore.remove(uidKey)
         client = nil
+        company = nil
+        companyCurrency = .eur
         state = .signedOut
+    }
+
+    /// Loads the user's main company and its currency. Called on sign-in and
+    /// lazily on app launch when restoring an existing session. No-op unless
+    /// we hold a real, signed-in UID.
+    func refreshCompanyContext() async {
+        guard
+            case .signedIn(_, let uid) = state,
+            uid > 0,
+            let client
+        else { return }
+
+        do {
+            let users: [UserCompanyDTO] = try await client.searchRead(
+                model: "res.users",
+                domain: [.array([.string("id"), .string("="), .int(uid)])],
+                fields: ["company_id"],
+                limit: 1
+            )
+            guard let companyId = users.first?.company_id.id, companyId > 0 else { return }
+
+            let companies: [Company] = try await client.searchRead(
+                model: "res.company",
+                domain: [.array([.string("id"), .string("="), .int(companyId)])],
+                fields: Company.fields,
+                limit: 1
+            )
+            guard let company = companies.first else { return }
+            self.company = company
+
+            let currencies: [Currency] = try await client.searchRead(
+                model: "res.currency",
+                domain: [.array([.string("id"), .string("="), .int(company.currency_id.id)])],
+                fields: Currency.fields,
+                limit: 1
+            )
+            if let currency = currencies.first {
+                self.companyCurrency = currency
+            }
+        } catch {
+            // Non-fatal — fall back to EUR until the next refresh succeeds.
+            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
     }
 
     private func persist(config: OdooClient.Config, apiKey: String, uid: Int) throws {
@@ -69,5 +117,10 @@ final class AuthManager {
         else { return }
         self.client = OdooClient(config: config, apiKey: apiKey, uid: uid)
         self.state = .signedIn(config, uid: uid)
+        Task { await refreshCompanyContext() }
     }
+}
+
+private struct UserCompanyDTO: Decodable, Sendable {
+    let company_id: Many2One
 }

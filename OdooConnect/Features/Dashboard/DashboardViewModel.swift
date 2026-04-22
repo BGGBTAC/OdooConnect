@@ -15,7 +15,6 @@ final class DashboardViewModel {
     var openOrders: Int = 0
     var outstandingReceivable: Double = 0
     var weeklyRevenue: [RevenuePoint] = []
-    var currency: String = "EUR"
     var isLoading: Bool = false
     var error: String?
 
@@ -52,33 +51,40 @@ final class DashboardViewModel {
         )
     }
 
+    /// Server-side aggregate: pulls a single grouped row instead of every order.
     private func fetchMonthlyRevenue(_ client: OdooClient) async throws -> Double {
         let start = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
         let startString = DateFormatter.odooDate.string(from: start)
-        let orders: [OrderTotalDTO] = try await client.searchRead(
+        let rows = try await client.readGroup(
             model: "sale.order",
             domain: [
                 .array([.string("state"), .string("in"), .array([.string("sale"), .string("done")])]),
                 .array([.string("date_order"), .string(">="), .string(startString)])
             ],
-            fields: ["amount_total"]
+            fields: ["amount_total"],
+            groupBy: []
         )
-        return orders.reduce(0) { $0 + $1.amount_total }
+        return rows.first?["amount_total"]?.doubleValue ?? 0
     }
 
+    /// Server-side aggregate: avoids paging every open invoice client-side.
     private func fetchOutstanding(_ client: OdooClient) async throws -> Double {
-        let rows: [OrderTotalDTO] = try await client.searchRead(
+        let rows = try await client.readGroup(
             model: "account.move",
             domain: [
                 .array([.string("move_type"), .string("="), .string("out_invoice")]),
                 .array([.string("state"), .string("="), .string("posted")]),
                 .array([.string("payment_state"), .string("in"), .array([.string("not_paid"), .string("partial"), .string("in_payment")])])
             ],
-            fields: ["amount_residual"]
+            fields: ["amount_residual"],
+            groupBy: []
         )
-        return rows.reduce(0) { $0 + ($1.amount_residual ?? 0) }
+        return rows.first?["amount_residual"]?.doubleValue ?? 0
     }
 
+    /// 8-week chart still client-buckets — Odoo's date:week label format is
+    /// version-dependent and the dataset is small enough that the saving
+    /// would be marginal.
     private func fetchWeeklyRevenue(_ client: OdooClient) async throws -> [RevenuePoint] {
         let cal = Calendar(identifier: .iso8601)
         let startOfThisWeek = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
@@ -105,17 +111,6 @@ final class DashboardViewModel {
             .map { RevenuePoint(weekStart: $0.key, total: $0.value) }
             .sorted { $0.weekStart < $1.weekStart }
     }
-}
-
-private struct OrderTotalDTO: Decodable, Sendable {
-    let amount_total: Double
-    let amount_residual: Double?
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        self.amount_total = (try? c.decode(Double.self, forKey: .amount_total)) ?? 0
-        self.amount_residual = try? c.decode(Double.self, forKey: .amount_residual)
-    }
-    enum CodingKeys: String, CodingKey { case amount_total, amount_residual }
 }
 
 private struct WeeklyOrderDTO: Decodable, Sendable {

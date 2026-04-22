@@ -10,11 +10,12 @@ struct Invoice: Identifiable, Sendable, Hashable, Decodable {
     let state: String
     let payment_state: String
     let move_type: String
+    let currency_id: Many2One
 
     static let fields: [String] = [
         "id", "name", "partner_id", "invoice_date",
         "amount_total", "amount_residual", "state",
-        "payment_state", "move_type"
+        "payment_state", "move_type", "currency_id"
     ]
 
     var stateLabel: String {
@@ -48,6 +49,7 @@ struct Invoice: Identifiable, Sendable, Hashable, Decodable {
         state = try c.decode(String.self, forKey: .state)
         payment_state = try c.decode(String.self, forKey: .payment_state)
         move_type = try c.decode(String.self, forKey: .move_type)
+        currency_id = try c.decode(Many2One.self, forKey: .currency_id)
 
         if let bool = try? c.decode(Bool.self, forKey: .invoice_date), bool == false {
             invoice_date = nil
@@ -57,6 +59,7 @@ struct Invoice: Identifiable, Sendable, Hashable, Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, partner_id, invoice_date, amount_total, amount_residual, state, payment_state, move_type
+        case id, name, partner_id, invoice_date, amount_total, amount_residual,
+             state, payment_state, move_type, currency_id
     }
 }

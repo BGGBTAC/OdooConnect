@@ -1,28 +1,57 @@
 import SwiftUI
+import SwiftData
 
-struct DraftLine: Identifiable, Sendable {
-    let id = UUID()
-    var product: Product
+/// In-flight editor state. Decoupled from the network `Partner` / `Product`
+/// types so the editor can be re-opened from a locally stored `DraftQuote`
+/// without round-tripping through the API.
+struct EditorPartner: Identifiable, Equatable, Hashable, Sendable {
+    let id: Int
+    let name: String
+}
+
+struct EditorLine: Identifiable, Sendable {
+    let id: UUID
+    var productId: Int
+    var productName: String
     var quantity: Double
     var priceUnit: Double
+
+    init(id: UUID = UUID(), productId: Int, productName: String, quantity: Double, priceUnit: Double) {
+        self.id = id
+        self.productId = productId
+        self.productName = productName
+        self.quantity = quantity
+        self.priceUnit = priceUnit
+    }
 
     var subtotal: Double { quantity * priceUnit }
 }
 
 struct QuoteEditorView: View {
     @Environment(AuthManager.self) private var auth
+    @Environment(DraftSync.self) private var draftSync
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var selectedPartner: Partner?
-    @State private var lines: [DraftLine] = []
+    let draft: DraftQuote?
+
+    @State private var partner: EditorPartner?
+    @State private var lines: [EditorLine] = []
     @State private var isSaving = false
     @State private var error: String?
     @State private var showingPartnerPicker = false
     @State private var showingProductPicker = false
+    @State private var hydrated = false
 
-    var onSaved: (() async -> Void)?
+    init(draft: DraftQuote? = nil) {
+        self.draft = draft
+    }
 
     var total: Double { lines.reduce(0) { $0 + $1.subtotal } }
+
+    private var code: String {
+        draft?.currencyCode ?? auth.companyCurrency.code
+    }
 
     var body: some View {
         Form {
@@ -31,8 +60,8 @@ struct QuoteEditorView: View {
                     showingPartnerPicker = true
                 } label: {
                     HStack {
-                        Text(selectedPartner?.name ?? "Kunden auswählen")
-                            .foregroundStyle(selectedPartner == nil ? .secondary : .primary)
+                        Text(partner?.name ?? "Kunden auswählen")
+                            .foregroundStyle(partner == nil ? .secondary : .primary)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                     }
@@ -42,11 +71,9 @@ struct QuoteEditorView: View {
             Section("Positionen") {
                 ForEach($lines) { $line in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(line.product.name).font(.headline)
-                        HStack {
-                            Stepper(value: $line.quantity, in: 0.01...9999, step: 1) {
-                                Text("Menge: \(line.quantity, specifier: "%.2f")")
-                            }
+                        Text(line.productName).font(.headline)
+                        Stepper(value: $line.quantity, in: 0.01...9999, step: 1) {
+                            Text("Menge: \(line.quantity, specifier: "%.2f")")
                         }
                         HStack {
                             Text("Preis")
@@ -59,7 +86,7 @@ struct QuoteEditorView: View {
                         HStack {
                             Text("Zwischensumme").foregroundStyle(.secondary)
                             Spacer()
-                            Text(line.subtotal, format: .currency(code: "EUR"))
+                            Text(line.subtotal, format: .currency(code: code))
                                 .monospacedDigit()
                         }
                     }
@@ -77,7 +104,7 @@ struct QuoteEditorView: View {
                 HStack {
                     Text("Gesamt").font(.headline)
                     Spacer()
-                    Text(total, format: .currency(code: "EUR"))
+                    Text(total, format: .currency(code: code))
                         .font(.title3.bold().monospacedDigit())
                 }
             }
@@ -86,7 +113,7 @@ struct QuoteEditorView: View {
                 Section { Text(error).foregroundStyle(.red) }
             }
         }
-        .navigationTitle("Neues Angebot")
+        .navigationTitle(draft == nil ? "Neues Angebot" : "Entwurf bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -102,47 +129,87 @@ struct QuoteEditorView: View {
             }
         }
         .sheet(isPresented: $showingPartnerPicker) {
-            PartnerPickerView { partner in
-                selectedPartner = partner
+            PartnerPickerView { picked in
+                partner = EditorPartner(id: picked.id, name: picked.name)
                 showingPartnerPicker = false
             }
         }
         .sheet(isPresented: $showingProductPicker) {
             ProductPickerView { product in
-                lines.append(DraftLine(product: product, quantity: 1, priceUnit: product.list_price))
+                lines.append(EditorLine(
+                    productId: product.id,
+                    productName: product.name,
+                    quantity: 1,
+                    priceUnit: product.list_price
+                ))
                 showingProductPicker = false
             }
         }
+        .onAppear(perform: hydrate)
     }
 
     private var canSave: Bool {
-        selectedPartner != nil && !lines.isEmpty && !isSaving
+        partner != nil && !lines.isEmpty && !isSaving
+    }
+
+    private func hydrate() {
+        guard !hydrated else { return }
+        hydrated = true
+        guard let draft else { return }
+        partner = EditorPartner(id: draft.partnerId, name: draft.partnerName)
+        lines = draft.lines.map { line in
+            EditorLine(
+                productId: line.productId,
+                productName: line.productName,
+                quantity: line.quantity,
+                priceUnit: line.priceUnit
+            )
+        }
     }
 
     private func save() async {
-        guard let client = auth.client, let partner = selectedPartner else { return }
+        guard let partner else { return }
         isSaving = true
         defer { isSaving = false }
-        do {
-            let linesPayload: [JSON] = lines.map { line in
-                .array([
-                    .int(0), .int(0),
-                    .object([
-                        "product_id": .int(line.product.id),
-                        "product_uom_qty": .double(line.quantity),
-                        "price_unit": .double(line.priceUnit)
-                    ])
-                ])
-            }
-            let values: [String: JSON] = [
-                "partner_id": .int(partner.id),
-                "order_line": .array(linesPayload)
-            ]
-            _ = try await client.create(model: "sale.order", values: values)
-            await onSaved?()
-            dismiss()
-        } catch {
-            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+
+        let target: DraftQuote
+        if let draft {
+            draft.partnerId = partner.id
+            draft.partnerName = partner.name
+            draft.lines.removeAll()
+            draft.status = .pending
+            draft.attempts = 0
+            draft.lastError = nil
+            target = draft
+        } else {
+            let new = DraftQuote(
+                partnerId: partner.id,
+                partnerName: partner.name,
+                currencyId: auth.companyCurrency.id,
+                currencyCode: auth.companyCurrency.code
+            )
+            modelContext.insert(new)
+            target = new
         }
+        for line in lines {
+            target.lines.append(DraftLine(
+                productId: line.productId,
+                productName: line.productName,
+                quantity: line.quantity,
+                priceUnit: line.priceUnit
+            ))
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            self.error = "Lokales Speichern fehlgeschlagen: \(error.localizedDescription)"
+            return
+        }
+
+        dismiss()
+        // The list listens to draftSync.lastSyncedAt and refreshes itself
+        // when this completes — no need to thread a callback through here.
+        Task { await draftSync.sync() }
     }
 }

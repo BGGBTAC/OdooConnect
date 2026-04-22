@@ -8,6 +8,9 @@ struct OrderDetailView: View {
     @State private var lines: [SaleOrderLine] = []
     @State private var isLoading = false
     @State private var error: String?
+    @State private var showingSignature = false
+    @State private var signatureUploaded = false
+    @State private var signatureMessage: String?
 
     var body: some View {
         List {
@@ -23,10 +26,10 @@ struct OrderDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(line.product_id.name).font(.headline)
                             HStack {
-                                Text("\(line.product_uom_qty, specifier: "%.2f") × \(line.price_unit, format: .currency(code: "EUR"))")
+                                Text("\(line.product_uom_qty, specifier: "%.2f") × \(line.price_unit, format: .currency(code: code))")
                                     .font(.subheadline).foregroundStyle(.secondary)
                                 Spacer()
-                                Text(line.price_subtotal, format: .currency(code: "EUR"))
+                                Text(line.price_subtotal, format: .currency(code: code))
                                     .monospacedDigit()
                             }
                         }
@@ -36,12 +39,12 @@ struct OrderDetailView: View {
                     HStack {
                         Text("Netto").foregroundStyle(.secondary)
                         Spacer()
-                        Text(order.amount_untaxed, format: .currency(code: "EUR")).monospacedDigit()
+                        Text(order.amount_untaxed, format: .currency(code: code)).monospacedDigit()
                     }
                     HStack {
                         Text("Gesamt").font(.headline)
                         Spacer()
-                        Text(order.amount_total, format: .currency(code: "EUR"))
+                        Text(order.amount_total, format: .currency(code: code))
                             .font(.headline.monospacedDigit())
                     }
                 }
@@ -50,6 +53,54 @@ struct OrderDetailView: View {
         .navigationTitle(order?.name ?? "Bestellung")
         .task { await load() }
         .overlay { if isLoading && order == nil { ProgressView() } }
+        .toolbar {
+            if order != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingSignature = true
+                    } label: {
+                        Label(
+                            signatureUploaded ? "Signiert" : "Unterschreiben",
+                            systemImage: signatureUploaded ? "checkmark.seal.fill" : "signature"
+                        )
+                    }
+                    .tint(signatureUploaded ? .green : .accentColor)
+                }
+            }
+        }
+        .sheet(isPresented: $showingSignature) {
+            SignatureSheet(title: "Unterschrift") { png in
+                await uploadSignature(png)
+            }
+        }
+        .alert("Hinweis", isPresented: .constant(signatureMessage != nil)) {
+            Button("OK") { signatureMessage = nil }
+        } message: {
+            Text(signatureMessage ?? "")
+        }
+    }
+
+    private var code: String {
+        order?.currency_id.name ?? auth.companyCurrency.code
+    }
+
+    private func uploadSignature(_ png: Data) async {
+        guard let client = auth.client, let order else { return }
+        let base64 = png.base64EncodedString()
+        do {
+            _ = try await client.create(model: "ir.attachment", values: [
+                "name": .string("signature_\(order.name).png"),
+                "type": .string("binary"),
+                "datas": .string(base64),
+                "res_model": .string("sale.order"),
+                "res_id": .int(order.id),
+                "mimetype": .string("image/png")
+            ])
+            signatureUploaded = true
+            signatureMessage = "Unterschrift wurde an die Bestellung angehängt."
+        } catch {
+            signatureMessage = "Upload fehlgeschlagen: \((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)"
+        }
     }
 
     private func load() async {

@@ -8,11 +8,11 @@ struct SaleOrder: Identifiable, Sendable, Hashable, Decodable {
     let amount_total: Double
     let amount_untaxed: Double
     let state: String
-    @OdooOptionalString var currency_name: String?
+    let currency_id: Many2One
 
     static let fields: [String] = [
         "id", "name", "partner_id", "date_order",
-        "amount_total", "amount_untaxed", "state"
+        "amount_total", "amount_untaxed", "state", "currency_id"
     ]
 
     var stateLabel: String {
@@ -36,8 +36,10 @@ struct SaleOrderLine: Identifiable, Sendable, Hashable, Decodable {
     let product_uom_qty: Double
     let price_unit: Double
     let price_subtotal: Double
+    let currency_id: Many2One
 
     static let fields: [String] = [
-        "id", "name", "product_id", "product_uom_qty", "price_unit", "price_subtotal"
+        "id", "name", "product_id", "product_uom_qty",
+        "price_unit", "price_subtotal", "currency_id"
     ]
 }

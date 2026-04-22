@@ -9,7 +9,7 @@ struct DashboardView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 16) {
                 StatCard(title: "Umsatz (Monat)",
-                         value: model.monthlyRevenue.formatted(currency: model.currency),
+                         value: model.monthlyRevenue.formatted(.currency(code: code)),
                          systemImage: "eurosign.circle.fill",
                          tint: .green)
                 StatCard(title: "Offene Angebote",
@@ -21,7 +21,7 @@ struct DashboardView: View {
                          systemImage: "cart.fill",
                          tint: .orange)
                 StatCard(title: "Offene Rechnungen",
-                         value: model.outstandingReceivable.formatted(currency: model.currency),
+                         value: model.outstandingReceivable.formatted(.currency(code: code)),
                          systemImage: "exclamationmark.circle.fill",
                          tint: .red)
             }
@@ -42,6 +42,8 @@ struct DashboardView: View {
             Text(model.error ?? "")
         }
     }
+
+    private var code: String { auth.companyCurrency.code }
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: 200), spacing: 16)]
@@ -83,14 +85,5 @@ private struct StatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-    }
-}
-
-private extension Double {
-    func formatted(currency: String) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = currency
-        return f.string(from: self as NSNumber) ?? "\(self)"
     }
 }

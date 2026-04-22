@@ -5,6 +5,7 @@ struct InvoicesListView: View {
     @State private var invoices: [Invoice] = []
     @State private var isLoading = false
     @State private var error: String?
+    @State private var searchText = ""
 
     var body: some View {
         List(invoices) { invoice in
@@ -13,12 +14,20 @@ struct InvoicesListView: View {
             }
         }
         .navigationTitle("Rechnungen")
+        .searchable(text: $searchText, prompt: "Kunde oder Nummer")
         .navigationDestination(for: Invoice.self) { InvoiceDetailView(invoiceId: $0.id) }
         .refreshable { await load() }
-        .task { await load() }
+        .task(id: searchText) {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            await load()
+        }
         .overlay {
             if invoices.isEmpty && !isLoading {
-                ContentUnavailableView("Keine Rechnungen", systemImage: "doc.plaintext")
+                ContentUnavailableView(
+                    searchText.isEmpty ? "Keine Rechnungen" : "Keine Treffer",
+                    systemImage: "doc.plaintext"
+                )
             }
         }
     }
@@ -28,11 +37,18 @@ struct InvoicesListView: View {
         isLoading = true
         defer { isLoading = false }
         do {
+            var domain: [JSON] = [
+                .array([.string("move_type"), .string("="), .string("out_invoice")])
+            ]
+            let needle = searchText.trimmingCharacters(in: .whitespaces)
+            if !needle.isEmpty {
+                domain.append(.string("|"))
+                domain.append(.array([.string("name"), .string("ilike"), .string(needle)]))
+                domain.append(.array([.string("partner_id.name"), .string("ilike"), .string(needle)]))
+            }
             invoices = try await client.searchRead(
                 model: "account.move",
-                domain: [
-                    .array([.string("move_type"), .string("="), .string("out_invoice")])
-                ],
+                domain: domain,
                 fields: Invoice.fields,
                 limit: 200,
                 order: "invoice_date desc, id desc"
@@ -57,7 +73,7 @@ struct InvoiceRow: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                Text(invoice.amount_total, format: .currency(code: "EUR"))
+                Text(invoice.amount_total, format: .currency(code: invoice.currency_id.name))
                     .font(.headline.monospacedDigit())
                 Text(invoice.paymentLabel)
                     .font(.caption)

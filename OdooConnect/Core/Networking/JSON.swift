@@ -83,8 +83,12 @@ struct Many2One: Decodable, Sendable, Hashable {
 
 /// Many fields come back as `false` instead of an empty string when empty.
 @propertyWrapper
-struct OdooOptionalString: Decodable, Sendable {
+struct OdooOptionalString: Decodable, Sendable, Hashable {
     var wrappedValue: String?
+
+    init(wrappedValue: String?) {
+        self.wrappedValue = wrappedValue
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.singleValueContainer()

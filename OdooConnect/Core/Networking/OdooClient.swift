@@ -123,7 +123,7 @@ actor OdooClient {
             "jsonrpc": .string("2.0"),
             "method": .string("call"),
             "params": .object(params),
-            "id": .int(Int.random(in: 1...Int.max))
+            "id": .int(Int(UInt32.random(in: 1...UInt32.max)))
         ]
         request.httpBody = try JSON.object(body).encoded()
 
@@ -177,14 +177,14 @@ extension JSONDecoder {
 }
 
 extension DateFormatter {
-    nonisolated(unsafe) static let odooDateTime: DateFormatter = {
+    static let odooDateTime: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.timeZone = TimeZone(identifier: "UTC")
         f.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return f
     }()
-    nonisolated(unsafe) static let odooDate: DateFormatter = {
+    static let odooDate: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.timeZone = TimeZone(identifier: "UTC")

@@ -5,13 +5,25 @@ Native iOS 26 Universal‑App (iPhone + iPad) für Odoo 19 Enterprise
 
 ## Funktionen
 
-- **Dashboard**: Monatsumsatz, offene Angebote, offene Bestellungen,
-  offene Forderungen, Umsatzverlauf der letzten 8 Wochen (Chart)
-- **Angebote**: Liste, Erstellen (Kunde + Positionen), Detailansicht
-- **Bestellungen**: Liste bestätigter Aufträge mit Positionen
-- **Rechnungen**: Liste und Detail mit Zahlungsstatus
+- **Dashboard**: Monatsumsatz, offene Angebote / Bestellungen, offene
+  Forderungen, Umsatzverlauf der letzten 8 Wochen (Swift Charts).
+  Server‑seitig aggregiert via `read_group`.
+- **Angebote**: Liste mit Suche, Erstellen + Bearbeiten lokaler
+  Entwürfe, Detailansicht
+- **Bestellungen**: Liste mit Suche und Detail; Apple Pencil
+  Unterschrift wird als `ir.attachment` an die Bestellung gehängt
+- **Rechnungen**: Liste mit Suche und Detail mit Zahlungsstatus
+- **Offline‑Drafts**: SwiftData persistiert lokal; ein Outbox‑Actor
+  pusht beim Online‑Werden automatisch nach Odoo. Idempotent via
+  `client_order_ref`, max 5 Retries pro Draft, manueller
+  Re‑Sync in den Einstellungen.
+- **Push‑Notifications**: `BGAppRefreshTask` wacht ~alle 15 Min auf
+  und prüft auf neue bestätigte Aufträge → lokale Notification
 - **Multi‑Device**: Adaptive `TabView` wird auf iPad zur Sidebar
-- **Sichere Auth**: API‑Key im Keychain, keine Passwörter auf dem Gerät
+- **Multi‑Currency**: Beträge werden in der Beleg‑Währung
+  angezeigt; Defaults aus `res.company.currency_id`
+- **Sichere Auth**: API‑Key im Keychain (`ThisDeviceOnly`),
+  keine Passwörter auf dem Gerät, kein iCloud‑Sync
 
 ## Voraussetzungen
 
@@ -32,24 +44,32 @@ open OdooConnect.xcodeproj
 
 ```
 OdooConnect/
-├── OdooConnectApp.swift            # App entry, injiziert AuthManager
+├── OdooConnectApp.swift            # @main, ModelContainer, BGTask register
 ├── Core/
 │   ├── Networking/
-│   │   ├── OdooClient.swift        # actor; JSON-RPC /jsonrpc, execute_kw
+│   │   ├── OdooClient.swift        # actor; JSON-RPC, search_read, read_group
 │   │   ├── OdooError.swift
-│   │   └── JSON.swift              # JSON‑Value + Many2One Decoder
+│   │   └── JSON.swift              # JSON-Value + Many2One Decoder
 │   ├── Auth/
-│   │   ├── AuthManager.swift       # @Observable, State + Keychain
-│   │   └── KeychainStore.swift
-│   └── Models/                     # Partner, Product, SaleOrder, Invoice
+│   │   ├── AuthManager.swift       # @Observable; Keychain restore + company
+│   │   └── KeychainStore.swift     # SecItemUpdate, ThisDeviceOnly
+│   ├── Models/                     # Partner, Product, SaleOrder, Invoice,
+│   │                               # Company, Currency
+│   ├── Persistence/
+│   │   ├── DraftQuote.swift        # @Model: DraftQuote + DraftLine
+│   │   ├── Connectivity.swift      # NWPathMonitor → AsyncStream
+│   │   ├── OutboxProcessor.swift   # @ModelActor; idempotent push
+│   │   └── DraftSync.swift         # @MainActor coordinator
+│   └── Notifications/
+│       └── OrderWatcher.swift      # BGAppRefresh + UNNotification
 └── Features/
     ├── Root/RootView.swift         # TabView .sidebarAdaptable
     ├── Auth/LoginView.swift
     ├── Dashboard/                  # Cards + Swift Charts
-    ├── Quotes/                     # Liste + Editor + Partner/Product Picker
-    ├── Orders/                     # Liste + Detail
+    ├── Quotes/                     # Liste + Editor + Pickers
+    ├── Orders/                     # Liste + Detail + SignatureSheet
     ├── Invoices/                   # Liste + Detail
-    └── Settings/SettingsView.swift
+    └── Settings/                   # Verbindung, Currency, Sync, Notif
 ```
 
 ### Odoo API
@@ -60,8 +80,29 @@ Alle Aufrufe gehen über `POST {baseURL}/jsonrpc`:
 - `object.execute_kw(db, uid, api_key, model, method, args, kwargs)`
   für `search_read`, `search_count`, `read_group`, `create`, `write`
 
-### Weitere Ausbaustufen
+### Offline‑Sync‑Pipeline
 
-- Offline‑Drafts via SwiftData + Outbox‑Queue
-- Signatur per Apple Pencil auf Angebots‑Detailansicht (PKCanvas)
-- Push‑Notifications für neue Bestellungen
+1. `QuoteEditorView` schreibt `DraftQuote` in SwiftData → Status `pending`
+2. `DraftSync` triggert `OutboxProcessor.process(client:)`
+3. `OutboxProcessor` (eigener `@ModelActor`):
+   - sucht in Odoo nach `client_order_ref = draft.id` (Idempotenz)
+   - falls vorhanden → übernimmt Remote‑ID, löscht lokal
+   - sonst → `sale.order.create`, löscht lokal
+   - bei Fehler → Status `failed`, `attempts++`, Retry bis Max 5
+4. `Connectivity` (NWPathMonitor) triggert Sync bei Online‑Wechsel
+
+### Bekannte Limits
+
+- Push ohne eigenen Server → BG‑Polling alle ~15 Min (System‑Drift)
+- Dashboard‑Aggregate gehen über die Company‑Default‑Währung; bei
+  Mehrwährungs‑Belegen ist der Summenwert grob. Saubere Lösung:
+  `read_group` nach `currency_id` → für später
+- Editor unterstützt keine Discounts / Steuern; Odoo wendet
+  Default‑Steuern via `onchange` an
+
+### Roadmap
+
+- [ ] String Catalog komplett befüllen + EN‑Übersetzung
+- [ ] Discounts, Steuern, Versanddetails im Editor
+- [ ] Server‑Push via Odoo‑Bot (statt BG‑Polling)
+- [ ] Conflict‑Detection bei parallelen Edits
