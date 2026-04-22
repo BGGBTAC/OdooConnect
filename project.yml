@@ -1,6 +1,6 @@
 name: OdooConnect
 options:
-  bundleIdPrefix: com.odooconnect
+  bundleIdPrefix: com.benedict
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
@@ -22,7 +22,7 @@ targets:
       - path: OdooConnect
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.odooconnect.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.benedict.odooconnect
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         INFOPLIST_FILE: OdooConnect/Info.plist

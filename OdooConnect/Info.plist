@@ -32,7 +32,7 @@
     </dict>
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
-        <string>com.odooconnect.app.refresh</string>
+        <string>com.benedict.odooconnect.refresh</string>
     </array>
 </dict>
 </plist>

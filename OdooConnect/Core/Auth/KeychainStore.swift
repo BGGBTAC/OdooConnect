@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 enum KeychainStore {
-    private static let service = "com.odooconnect.app"
+    private static let service = "com.benedict.odooconnect"
 
     static func set(_ value: String, for key: String) throws {
         let data = Data(value.utf8)

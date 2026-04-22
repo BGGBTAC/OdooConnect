@@ -10,7 +10,7 @@ import UserNotifications
 @Observable
 @MainActor
 final class OrderWatcher {
-    static let backgroundTaskIdentifier = "com.odooconnect.app.refresh"
+    static let backgroundTaskIdentifier = "com.benedict.odooconnect.refresh"
 
     private weak var auth: AuthManager?
     private let lastSeenKey = "orderWatcher.lastSeenId"
