@@ -56,6 +56,16 @@ enum JSON: Sendable, Codable, Equatable {
         if case .string(let v) = self { return v }
         return nil
     }
+
+    var objectValue: [String: JSON]? {
+        if case .object(let v) = self { return v }
+        return nil
+    }
+
+    var arrayValue: [JSON]? {
+        if case .array(let v) = self { return v }
+        return nil
+    }
 }
 
 /// Odoo encodes many2one fields as `[id, display_name]` or `false` when empty.
