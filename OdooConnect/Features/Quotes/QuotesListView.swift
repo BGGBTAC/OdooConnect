@@ -186,8 +186,8 @@ private struct StatusBadge: View {
             .font(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(tint.opacity(0.15), in: Capsule())
             .foregroundStyle(tint)
+            .glassEffect(.regular.tint(tint.opacity(0.18)), in: .capsule)
             .accessibilityLabel(label)
     }
 

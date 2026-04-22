@@ -7,29 +7,33 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                StatCard(title: "Umsatz (Monat)",
-                         value: model.monthlyRevenue.formatted(.currency(code: code)),
-                         systemImage: "eurosign.circle.fill",
-                         tint: .green)
-                StatCard(title: "Offene Angebote",
-                         value: "\(model.openQuotes)",
-                         systemImage: "doc.text",
-                         tint: .blue)
-                StatCard(title: "Offene Bestellungen",
-                         value: "\(model.openOrders)",
-                         systemImage: "cart.fill",
-                         tint: .orange)
-                StatCard(title: "Offene Rechnungen",
-                         value: model.outstandingReceivable.formatted(.currency(code: code)),
-                         systemImage: "exclamationmark.circle.fill",
-                         tint: .red)
-            }
-            .padding(.horizontal)
+            // GlassEffectContainer batches the glass renders and lets the
+            // shapes blend smoothly during scroll / size transitions.
+            GlassEffectContainer(spacing: 16) {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    StatCard(title: "Umsatz (Monat)",
+                             value: model.monthlyRevenue.formatted(.currency(code: code)),
+                             systemImage: "eurosign.circle.fill",
+                             tint: .green)
+                    StatCard(title: "Offene Angebote",
+                             value: "\(model.openQuotes)",
+                             systemImage: "doc.text",
+                             tint: .blue)
+                    StatCard(title: "Offene Bestellungen",
+                             value: "\(model.openOrders)",
+                             systemImage: "cart.fill",
+                             tint: .orange)
+                    StatCard(title: "Offene Rechnungen",
+                             value: model.outstandingReceivable.formatted(.currency(code: code)),
+                             systemImage: "exclamationmark.circle.fill",
+                             tint: .red)
+                }
+                .padding(.horizontal)
 
-            if !model.weeklyRevenue.isEmpty {
-                revenueChart
-                    .padding()
+                if !model.weeklyRevenue.isEmpty {
+                    revenueChart
+                        .padding()
+                }
             }
         }
         .navigationTitle("Dashboard")
@@ -63,7 +67,7 @@ struct DashboardView: View {
             .frame(height: 220)
         }
         .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 }
 
@@ -84,6 +88,6 @@ private struct StatCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 }

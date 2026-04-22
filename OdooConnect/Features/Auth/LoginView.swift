@@ -46,7 +46,7 @@ struct LoginView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                     .disabled(URL(string: serverURL) == nil || oauthInFlight)
                 } footer: {
                     if let oauthError {
@@ -85,7 +85,7 @@ struct LoginView: View {
                                 Text("Anmelden").frame(maxWidth: .infinity)
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.glass)
                         .disabled(!canSubmitManual || auth.state == .signingIn)
                     }
                 } footer: {
