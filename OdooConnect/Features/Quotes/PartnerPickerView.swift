@@ -7,6 +7,7 @@ struct PartnerPickerView: View {
     @State private var partners: [Partner] = []
     @State private var query: String = ""
     @State private var isLoading = false
+    @State private var error: String?
 
     let onSelect: (Partner) -> Void
 
@@ -25,12 +26,26 @@ struct PartnerPickerView: View {
                             Text(city).font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
             }
             .searchable(text: $query, prompt: "Name, E‑Mail, Stadt")
-            .onChange(of: query) { _, _ in Task { await search() } }
-            .task { await search() }
-            .overlay { if isLoading && partners.isEmpty { ProgressView() } }
+            .task(id: query) {
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                await search()
+            }
+            .overlay {
+                if isLoading && partners.isEmpty { ProgressView() }
+                if let error, partners.isEmpty {
+                    ContentUnavailableView(
+                        "Fehler",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(error)
+                    )
+                }
+            }
             .navigationTitle("Kunden")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -43,11 +58,13 @@ struct PartnerPickerView: View {
     private func search() async {
         guard let client = auth.client else { return }
         isLoading = true
+        error = nil
         defer { isLoading = false }
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         var domain: [JSON] = [.array([.string("customer_rank"), .string(">"), .int(0)])]
         if !trimmed.isEmpty {
             domain = [
+                .array([.string("customer_rank"), .string(">"), .int(0)]),
                 .string("|"), .string("|"),
                 .array([.string("name"), .string("ilike"), .string(trimmed)]),
                 .array([.string("email"), .string("ilike"), .string(trimmed)]),
@@ -63,6 +80,7 @@ struct PartnerPickerView: View {
                 order: "name asc"
             )
         } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             partners = []
         }
     }

@@ -7,6 +7,11 @@ struct LoginView: View {
     @State private var database: String = ""
     @State private var login: String = ""
     @State private var apiKey: String = ""
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable {
+        case serverURL, database, login, apiKey
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,20 +22,29 @@ struct LoginView: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($focusedField, equals: .serverURL)
+                        .submitLabel(.next)
                     TextField("Datenbank", text: $database)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($focusedField, equals: .database)
+                        .submitLabel(.next)
                 }
                 Section("Zugangsdaten") {
                     TextField("E‑Mail oder Login", text: $login)
                         .textContentType(.username)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($focusedField, equals: .login)
+                        .submitLabel(.next)
                     SecureField("API‑Key", text: $apiKey)
                         .textContentType(.password)
+                        .focused($focusedField, equals: .apiKey)
+                        .submitLabel(.go)
                 }
                 Section {
                     Button {
+                        focusedField = nil
                         Task { await performSignIn() }
                     } label: {
                         if auth.state == .signingIn {
@@ -52,6 +66,7 @@ struct LoginView: View {
                 }
             }
             .navigationTitle("OdooConnect")
+            .onSubmit { advanceFocus() }
         }
     }
 
@@ -60,6 +75,18 @@ struct LoginView: View {
         !database.trimmingCharacters(in: .whitespaces).isEmpty &&
         !login.trimmingCharacters(in: .whitespaces).isEmpty &&
         !apiKey.isEmpty
+    }
+
+    private func advanceFocus() {
+        switch focusedField {
+        case .serverURL: focusedField = .database
+        case .database: focusedField = .login
+        case .login: focusedField = .apiKey
+        case .apiKey:
+            focusedField = nil
+            if canSubmit { Task { await performSignIn() } }
+        case nil: break
+        }
     }
 
     private func performSignIn() async {
