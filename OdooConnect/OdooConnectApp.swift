@@ -1,12 +1,14 @@
 import SwiftUI
 import SwiftData
 import BackgroundTasks
+import UserNotifications
 
 @main
 struct OdooConnectApp: App {
     @State private var auth: AuthManager
     @State private var draftSync: DraftSync
     @State private var orderWatcher: OrderWatcher
+    @State private var router: AppRouter
     @Environment(\.scenePhase) private var scenePhase
     private let container: ModelContainer
 
@@ -17,9 +19,15 @@ struct OdooConnectApp: App {
 
         let auth = AuthManager()
         let watcher = OrderWatcher(auth: auth)
+        let router = AppRouter()
+
+        NotificationDelegate.shared.router = router
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+
         _auth = State(initialValue: auth)
         _draftSync = State(initialValue: DraftSync(container: container, auth: auth))
         _orderWatcher = State(initialValue: watcher)
+        _router = State(initialValue: router)
 
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: OrderWatcher.backgroundTaskIdentifier,
@@ -44,6 +52,7 @@ struct OdooConnectApp: App {
                 .modelContainer(container)
                 .environment(draftSync)
                 .environment(orderWatcher)
+                .environment(router)
                 .task { draftSync.start() }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .background {

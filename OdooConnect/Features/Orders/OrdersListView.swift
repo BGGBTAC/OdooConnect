@@ -18,6 +18,11 @@ struct OrdersListView: View {
         .navigationDestination(for: SaleOrder.self) { order in
             OrderDetailView(orderId: order.id)
         }
+        .navigationDestination(for: AppRouter.OrderRoute.self) { route in
+            switch route {
+            case .detail(let id): OrderDetailView(orderId: id)
+            }
+        }
         .refreshable { await load() }
         .task(id: searchText) {
             try? await Task.sleep(for: .milliseconds(250))

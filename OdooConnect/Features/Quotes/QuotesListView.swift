@@ -103,6 +103,7 @@ struct QuotesListView: View {
                 case .edit(let draft): QuoteEditorView(draft: draft)
                 }
             }
+            .presentationSizing(.form)
         }
         .overlay {
             if model.quotes.isEmpty && filteredDrafts.isEmpty && !model.isLoading {
