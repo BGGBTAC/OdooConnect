@@ -45,6 +45,28 @@ final class AuthManager {
         }
     }
 
+    /// Used by the browser-based OAuth flow: the bridge module on the server
+    /// already minted an API key, so we skip `OdooClient.authenticate` and
+    /// jump straight to building the client + persisting credentials.
+    func completeOAuth(serverURL: URL, result: OAuthResult) async {
+        state = .signingIn
+        lastError = nil
+        let config = OdooClient.Config(
+            baseURL: serverURL,
+            database: result.database,
+            login: result.login
+        )
+        do {
+            try persist(config: config, apiKey: result.apiKey, uid: result.uid)
+            self.client = OdooClient(config: config, apiKey: result.apiKey, uid: result.uid)
+            self.state = .signedIn(config, uid: result.uid)
+            await refreshCompanyContext()
+        } catch {
+            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.state = .signedOut
+        }
+    }
+
     func signOut() {
         KeychainStore.remove(configKey)
         KeychainStore.remove(apiKeyKey)

@@ -36,6 +36,19 @@
     <array>
         <string>com.benedict.odooconnect.refresh</string>
     </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.benedict.odooconnect.oauth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>odooconnect</string>
+            </array>
+            <key>CFBundleTypeRole</key>
+            <string>None</string>
+        </dict>
+    </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
