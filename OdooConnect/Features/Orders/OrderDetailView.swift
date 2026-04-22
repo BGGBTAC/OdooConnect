@@ -59,12 +59,16 @@ struct OrderDetailView: View {
                     Button {
                         showingSignature = true
                     } label: {
-                        Label(
-                            signatureUploaded ? "Signiert" : "Unterschreiben",
-                            systemImage: signatureUploaded ? "checkmark.seal.fill" : "signature"
-                        )
+                        Label {
+                            Text(signatureUploaded ? "Signiert" : "Unterschreiben")
+                                .contentTransition(.opacity)
+                        } icon: {
+                            Image(systemName: signatureUploaded ? "checkmark.seal.fill" : "signature")
+                                .contentTransition(.symbolEffect(.replace))
+                        }
                     }
                     .tint(signatureUploaded ? .green : .accentColor)
+                    .animation(.snappy, value: signatureUploaded)
                 }
             }
         }

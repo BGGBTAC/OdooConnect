@@ -17,6 +17,7 @@ struct QuotesListView: View {
     @Environment(AuthManager.self) private var auth
     @Environment(DraftSync.self) private var draftSync
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(
         sort: \DraftQuote.createdAt,
         order: .reverse
@@ -37,10 +38,13 @@ struct QuotesListView: View {
                             DraftRow(draft: draft)
                         }
                         .buttonStyle(.plain)
+                        .transition(rowTransition)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
-                                modelContext.delete(draft)
-                                try? modelContext.save()
+                                withAnimation(.smooth) {
+                                    modelContext.delete(draft)
+                                    try? modelContext.save()
+                                }
                             } label: {
                                 Label("Löschen", systemImage: "trash")
                             }
@@ -123,6 +127,15 @@ struct QuotesListView: View {
         guard !needle.isEmpty else { return drafts }
         return drafts.filter { $0.partnerName.lowercased().contains(needle) }
     }
+
+    private var rowTransition: AnyTransition {
+        reduceMotion
+            ? .opacity
+            : .asymmetric(
+                insertion: .move(edge: .top).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            )
+    }
 }
 
 struct QuoteRow: View {
@@ -181,14 +194,20 @@ private struct StatusBadge: View {
     let status: DraftStatus
 
     var body: some View {
-        Label(label, systemImage: icon)
-            .labelStyle(.titleAndIcon)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .foregroundStyle(tint)
-            .glassEffect(.regular.tint(tint.opacity(0.18)), in: .capsule)
-            .accessibilityLabel(label)
+        Label {
+            Text(label)
+        } icon: {
+            Image(systemName: icon)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .labelStyle(.titleAndIcon)
+        .font(.caption)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .foregroundStyle(tint)
+        .glassEffect(.regular.tint(tint.opacity(0.18)), in: .capsule)
+        .accessibilityLabel(label)
+        .animation(.snappy, value: status)
     }
 
     private var label: String {

@@ -7,34 +7,46 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            // GlassEffectContainer batches the glass renders and lets the
-            // shapes blend smoothly during scroll / size transitions.
             GlassEffectContainer(spacing: 16) {
                 LazyVGrid(columns: columns, spacing: 16) {
                     StatCard(title: "Umsatz (Monat)",
-                             value: model.monthlyRevenue.formatted(.currency(code: code)),
                              systemImage: "eurosign.circle.fill",
-                             tint: .green)
+                             tint: .green) {
+                        Text(model.monthlyRevenue, format: .currency(code: code))
+                            .contentTransition(.numericText(value: model.monthlyRevenue))
+                            .animation(.snappy, value: model.monthlyRevenue)
+                    }
                     StatCard(title: "Offene Angebote",
-                             value: "\(model.openQuotes)",
                              systemImage: "doc.text",
-                             tint: .blue)
+                             tint: .blue) {
+                        Text("\(model.openQuotes)")
+                            .contentTransition(.numericText(value: Double(model.openQuotes)))
+                            .animation(.snappy, value: model.openQuotes)
+                    }
                     StatCard(title: "Offene Bestellungen",
-                             value: "\(model.openOrders)",
                              systemImage: "cart.fill",
-                             tint: .orange)
+                             tint: .orange) {
+                        Text("\(model.openOrders)")
+                            .contentTransition(.numericText(value: Double(model.openOrders)))
+                            .animation(.snappy, value: model.openOrders)
+                    }
                     StatCard(title: "Offene Rechnungen",
-                             value: model.outstandingReceivable.formatted(.currency(code: code)),
                              systemImage: "exclamationmark.circle.fill",
-                             tint: .red)
+                             tint: .red) {
+                        Text(model.outstandingReceivable, format: .currency(code: code))
+                            .contentTransition(.numericText(value: model.outstandingReceivable))
+                            .animation(.snappy, value: model.outstandingReceivable)
+                    }
                 }
                 .padding(.horizontal)
 
                 if !model.weeklyRevenue.isEmpty {
                     revenueChart
                         .padding()
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 }
             }
+            .animation(.smooth, value: model.weeklyRevenue.count)
         }
         .navigationTitle("Dashboard")
         .refreshable { await model.load(using: auth.client) }
@@ -71,11 +83,11 @@ struct DashboardView: View {
     }
 }
 
-private struct StatCard: View {
+private struct StatCard<Value: View>: View {
     let title: String
-    let value: String
     let systemImage: String
     let tint: Color
+    @ViewBuilder let value: () -> Value
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -84,7 +96,9 @@ private struct StatCard: View {
                 Text(title).font(.subheadline).foregroundStyle(.secondary)
                 Spacer()
             }
-            Text(value).font(.title2.bold())
+            value()
+                .font(.title2.bold())
+                .monospacedDigit()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
