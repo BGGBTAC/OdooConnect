@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-import BackgroundTasks
+@preconcurrency import BackgroundTasks
 import UserNotifications
 import os
 

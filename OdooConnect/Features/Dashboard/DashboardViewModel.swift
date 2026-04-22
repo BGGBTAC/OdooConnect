@@ -81,8 +81,8 @@ final class DashboardViewModel {
     }
 
     private func safeDelta(
-        current: () async throws -> Double,
-        previous: () async throws -> Double
+        current: @Sendable () async throws -> Double,
+        previous: @Sendable () async throws -> Double
     ) async -> StatDelta {
         async let cur = (try? current()) ?? 0
         async let prev = (try? previous()) ?? 0
@@ -90,8 +90,8 @@ final class DashboardViewModel {
     }
 
     private func safeDeltaInt(
-        current: () async throws -> Int,
-        previous: () async throws -> Int
+        current: @Sendable () async throws -> Int,
+        previous: @Sendable () async throws -> Int
     ) async -> StatDelta {
         async let cur = (try? current()) ?? 0
         async let prev = (try? previous()) ?? 0

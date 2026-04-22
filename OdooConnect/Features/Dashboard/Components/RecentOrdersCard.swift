@@ -9,7 +9,7 @@ struct RecentOrdersCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("Letzte Bestellungen", systemImage: "bolt.fill")
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .font(.headline)
                 Spacer()
             }

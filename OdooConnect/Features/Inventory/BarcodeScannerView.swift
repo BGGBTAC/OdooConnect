@@ -1,5 +1,5 @@
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 import UIKit
 
 /// Thin AVFoundation wrapper. Fires `onScan` once per resolved code and then
