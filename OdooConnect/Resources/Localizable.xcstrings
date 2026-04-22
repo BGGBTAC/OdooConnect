@@ -1,5 +1,253 @@
 {
   "sourceLanguage" : "de",
-  "strings" : { },
+  "strings" : {
+    "" : {
+
+    },
+    "%.2f × %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$.2f × %2$@"
+          }
+        }
+      }
+    },
+    "Abbrechen" : {
+
+    },
+    "Abmelden" : {
+
+    },
+    "Aktualisieren" : {
+
+    },
+    "Angebote" : {
+
+    },
+    "Anmelden" : {
+
+    },
+    "API‑Key" : {
+
+    },
+    "App" : {
+
+    },
+    "Benachrichtigungen" : {
+
+    },
+    "Benutzer" : {
+
+    },
+    "Bestellungen" : {
+
+    },
+    "Beträge" : {
+
+    },
+    "Dashboard" : {
+
+    },
+    "Datenbank" : {
+
+    },
+    "Datum" : {
+
+    },
+    "Den API‑Key erstellst du in Odoo unter Einstellungen → Benutzer → Konto‑Sicherheit → API‑Keys." : {
+
+    },
+    "E‑Mail oder Login" : {
+
+    },
+    "Einstellungen" : {
+
+    },
+    "Entwurf bearbeiten" : {
+
+    },
+    "Erneut" : {
+
+    },
+    "Fehler" : {
+
+    },
+    "Fehlgeschlagen" : {
+
+    },
+    "Firma" : {
+
+    },
+    "Gesamt" : {
+
+    },
+    "Hinweis" : {
+
+    },
+    "https://mycompany.odoo.com" : {
+
+    },
+    "Jetzt synchronisieren" : {
+
+    },
+    "Keine Angebote" : {
+
+    },
+    "Keine Bestellungen" : {
+
+    },
+    "Keine Rechnungen" : {
+
+    },
+    "Keine Treffer" : {
+
+    },
+    "Kunde" : {
+
+    },
+    "Kunde oder Nummer" : {
+
+    },
+    "Kunden" : {
+
+    },
+    "Letzter Sync" : {
+
+    },
+    "Lokal gespeichert" : {
+
+    },
+    "Lokale Entwürfe" : {
+
+    },
+    "Löschen" : {
+
+    },
+    "Menge: %.2f" : {
+
+    },
+    "Name oder Artikelnummer" : {
+
+    },
+    "Name, E‑Mail, Stadt" : {
+
+    },
+    "Netto" : {
+
+    },
+    "Neu" : {
+
+    },
+    "Neue Bestellungen melden" : {
+
+    },
+    "Neues Angebot" : {
+
+    },
+    "Nummer" : {
+
+    },
+    "Odoo Server" : {
+
+    },
+    "OdooConnect" : {
+
+    },
+    "Offen" : {
+
+    },
+    "Offline-Entwürfe" : {
+
+    },
+    "OK" : {
+
+    },
+    "Positionen" : {
+
+    },
+    "Preis" : {
+
+    },
+    "Produkt hinzufügen" : {
+
+    },
+    "Produkte" : {
+
+    },
+    "Rechnungen" : {
+
+    },
+    "Server" : {
+
+    },
+    "Signiert" : {
+
+    },
+    "Speichern" : {
+
+    },
+    "Status" : {
+
+    },
+    "Summe" : {
+
+    },
+    "Synchronisiert" : {
+
+    },
+    "Tippe auf +, um ein neues Angebot zu erstellen." : {
+
+    },
+    "Über" : {
+
+    },
+    "UID" : {
+
+    },
+    "Umsatz" : {
+
+    },
+    "Umsatz letzte 8 Wochen" : {
+
+    },
+    "Unternehmen" : {
+
+    },
+    "Unterschreiben" : {
+
+    },
+    "Unterschrift löschen" : {
+
+    },
+    "Verbindung" : {
+
+    },
+    "Versuche einen anderen Suchbegriff." : {
+
+    },
+    "Währung" : {
+
+    },
+    "Wartet auf Sync" : {
+
+    },
+    "Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen." : {
+
+    },
+    "Woche" : {
+
+    },
+    "Zahlung" : {
+
+    },
+    "Zugangsdaten" : {
+
+    },
+    "Zwischensumme" : {
+
+    }
+  },
   "version" : "1.0"
 }
