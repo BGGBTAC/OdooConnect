@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import BackgroundTasks
 import UserNotifications
+import os
 
 @main
 struct OdooConnectApp: App {
@@ -37,11 +38,31 @@ struct OdooConnectApp: App {
                 task.setTaskCompleted(success: false)
                 return
             }
+            // setTaskCompleted MUST be called exactly once: once from the
+            // work Task on success, or once from the expiration handler
+            // when the system reclaims the task. Calling it twice — or
+            // not at all from the expiration handler — terminates the
+            // app and shows up as a crash in the next launch.
+            let didComplete = OSAllocatedUnfairLock<Bool>(initialState: false)
+            @Sendable func complete(_ success: Bool) {
+                let shouldFinish: Bool = didComplete.withLock { state in
+                    guard !state else { return false }
+                    state = true
+                    return true
+                }
+                if shouldFinish {
+                    refresh.setTaskCompleted(success: success)
+                }
+            }
+
             let work = Task { @MainActor in
                 _ = await watcher.performRefresh()
-                refresh.setTaskCompleted(success: true)
+                complete(true)
             }
-            refresh.expirationHandler = { work.cancel() }
+            refresh.expirationHandler = {
+                work.cancel()
+                complete(false)
+            }
         }
     }
 
