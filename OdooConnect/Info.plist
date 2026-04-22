@@ -67,6 +67,10 @@
         <string>fetch</string>
         <string>processing</string>
     </array>
+    <key>NSCameraUsageDescription</key>
+    <string>OdooCompanion nutzt die Kamera zum Scannen von Produkt-Barcodes für die Inventur.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>OdooCompanion greift auf die Fotomediathek zu, um Bilder an Angebote und Produkte anzuhängen.</string>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>
