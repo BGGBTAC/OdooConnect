@@ -6,23 +6,30 @@ struct ProductDetailView: View {
 
     @State private var product: ProductDetail?
     @State private var sales30d: SalesSummary?
+    @State private var variantAttributes: [ProductVariantAttribute] = []
+    @State private var siblingVariantCount: Int = 0
+    @State private var imageData: Data?
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingEditor = false
     @State private var showingTransfer = false
+    @State private var showingImageFullscreen = false
 
     var body: some View {
         ScrollView {
             if let product {
                 VStack(alignment: .leading, spacing: 16) {
                     header(product)
+                    if !variantAttributes.isEmpty {
+                        variantCard(product)
+                    }
                     stockCard(product)
                     salesCard
                 }
                 .padding()
             }
         }
-        .navigationTitle(product?.name ?? "Produkt")
+        .navigationTitle(product?.display_name ?? "Produkt")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
@@ -57,6 +64,22 @@ struct ProductDetailView: View {
                 .presentationDetents([.medium, .large])
             }
         }
+        .sheet(isPresented: $showingImageFullscreen) {
+            if let imageData, let uiImage = UIImage(data: imageData) {
+                NavigationStack {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.black)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Fertig") { showingImageFullscreen = false }
+                            }
+                        }
+                }
+            }
+        }
         .alert("Fehler", isPresented: .constant(error != nil)) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
@@ -64,14 +87,10 @@ struct ProductDetailView: View {
 
     private func header(_ product: ProductDetail) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 42))
-                    .foregroundStyle(.tint)
-                    .frame(width: 72, height: 72)
-                    .glassEffect(.regular.tint(.accentColor.opacity(0.15)), in: .rect(cornerRadius: 14))
+            HStack(alignment: .top, spacing: 14) {
+                productThumbnail
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(product.name).font(.title2.bold())
+                    Text(product.display_name).font(.title2.bold()).lineLimit(3)
                     if let code = product.default_code {
                         Text(code).font(.subheadline.monospaced()).foregroundStyle(.secondary)
                     }
@@ -89,6 +108,77 @@ struct ProductDetailView: View {
                     .font(.title.bold().monospacedDigit())
                 Spacer()
                 StockBadge(product: product)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: .rect(cornerRadius: 18))
+    }
+
+    @ViewBuilder
+    private var productThumbnail: some View {
+        if let imageData, let uiImage = UIImage(data: imageData) {
+            Button {
+                showingImageFullscreen = true
+            } label: {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 88, height: 88)
+                    .clipShape(.rect(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(.separator, lineWidth: 0.5)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Produktbild vergrößern")
+        } else {
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 42))
+                .foregroundStyle(.tint)
+                .frame(width: 88, height: 88)
+                .glassEffect(.regular.tint(.accentColor.opacity(0.15)), in: .rect(cornerRadius: 14))
+        }
+    }
+
+    private func variantCard(_ product: ProductDetail) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Variante", systemImage: "square.grid.2x2.fill")
+                    .font(.headline)
+                Spacer()
+                if siblingVariantCount > 1 {
+                    Text("\(siblingVariantCount) Varianten gesamt")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(variantAttributes) { attr in
+                        HStack(spacing: 6) {
+                            Text(attr.attribute_id.name)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                            Text(attr.name)
+                                .font(.caption.weight(.semibold))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.12), in: Capsule())
+                    }
+                }
+            }
+            if let template = product.product_tmpl_id, !template.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Text("Vorlage: \(template.name)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()
@@ -158,19 +248,58 @@ struct ProductDetailView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let detail: [ProductDetail] = client.searchRead(
+            // Fetch product (with image), sales summary in parallel.
+            async let detailFetch: [ProductDetail] = client.searchRead(
                 model: "product.product",
                 domain: [.array([.string("id"), .string("="), .int(productId)])],
-                fields: ProductDetail.fields,
+                fields: ProductDetail.fieldsWithImage,
                 limit: 1
             )
             async let sales = fetchSales30d(client)
-            let detailArray = try await detail
-            self.product = detailArray.first
+
+            let detail = try await detailFetch.first
+            self.product = detail
+            self.imageData = decodeImage(detail?.image_512)
             self.sales30d = try? await sales
+
+            // Variant follow-up: only when this variant has attribute values.
+            if let detail, !detail.product_template_attribute_value_ids.isEmpty {
+                async let attributes = fetchVariantAttributes(client, ids: detail.product_template_attribute_value_ids)
+                async let count = fetchSiblingVariantCount(client, templateId: detail.product_tmpl_id?.id ?? 0)
+                variantAttributes = (try? await attributes) ?? []
+                siblingVariantCount = (try? await count) ?? 0
+            } else {
+                variantAttributes = []
+                siblingVariantCount = 0
+            }
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    private func decodeImage(_ base64: String?) -> Data? {
+        guard let base64, !base64.isEmpty else { return nil }
+        return Data(base64Encoded: base64, options: .ignoreUnknownCharacters)
+    }
+
+    private func fetchVariantAttributes(_ client: OdooClient, ids: [Int]) async throws -> [ProductVariantAttribute] {
+        try await client.searchRead(
+            model: "product.template.attribute.value",
+            domain: [.array([.string("id"), .string("in"), .array(ids.map { .int($0) })])],
+            fields: ProductVariantAttribute.fields,
+            limit: ids.count
+        )
+    }
+
+    private func fetchSiblingVariantCount(_ client: OdooClient, templateId: Int) async throws -> Int {
+        guard templateId > 0 else { return 0 }
+        let rows: [TemplateCountDTO] = try await client.searchRead(
+            model: "product.template",
+            domain: [.array([.string("id"), .string("="), .int(templateId)])],
+            fields: ["product_variant_count"],
+            limit: 1
+        )
+        return rows.first?.product_variant_count ?? 0
     }
 
     private func fetchSales30d(_ client: OdooClient) async throws -> SalesSummary {
@@ -198,6 +327,10 @@ struct ProductDetailView: View {
             revenue: row?["price_subtotal"]?.doubleValue ?? 0
         )
     }
+}
+
+private struct TemplateCountDTO: Decodable, Sendable {
+    let product_variant_count: Int
 }
 
 struct SalesSummary: Sendable, Equatable {

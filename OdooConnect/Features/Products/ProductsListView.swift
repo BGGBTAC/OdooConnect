@@ -97,7 +97,7 @@ struct ProductRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(product.name).font(.headline).lineLimit(2)
+                Text(product.display_name).font(.headline).lineLimit(2)
                 HStack(spacing: 8) {
                     if let code = product.default_code {
                         Text(code).font(.caption.monospaced()).foregroundStyle(.secondary)
@@ -129,7 +129,7 @@ struct ProductTile: View {
                 .foregroundStyle(.tint)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(product.name).font(.headline).lineLimit(2).frame(height: 44, alignment: .topLeading)
+            Text(product.display_name).font(.headline).lineLimit(2).frame(height: 44, alignment: .topLeading)
 
             if let code = product.default_code {
                 Text(code).font(.caption.monospaced()).foregroundStyle(.secondary)
