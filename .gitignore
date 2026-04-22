@@ -1,0 +1,23 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# XcodeGen generated
+OdooConnect.xcodeproj/
+
+# SwiftPM
+.swiftpm/
+.build/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Secrets
+*.env
+secrets.plist
