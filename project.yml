@@ -32,7 +32,7 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        INFOPLIST_KEY_CFBundleDisplayName: OdooConnect
+        INFOPLIST_KEY_CFBundleDisplayName: OdooCompanion
         INFOPLIST_KEY_NSCameraUsageDescription: "Used to attach product photos to quotes."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Used to attach images to quotes."
         INFOPLIST_KEY_UIBackgroundModes: "fetch processing"
