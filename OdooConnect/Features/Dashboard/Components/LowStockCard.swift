@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LowStockCard: View {
     let rows: [LowStockRow]
+    var onTap: ((LowStockRow) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -28,15 +29,27 @@ struct LowStockCard: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(rows) { row in
-                        HStack {
-                            Text(row.name)
-                                .lineLimit(2)
-                            Spacer()
-                            Text("\(row.quantity, specifier: "%.0f") Stk")
-                                .monospacedDigit()
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(color(for: row.quantity))
+                        Button {
+                            onTap?(row)
+                        } label: {
+                            HStack {
+                                Text(row.name)
+                                    .lineLimit(2)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text("\(row.quantity, specifier: "%.0f") Stk")
+                                    .monospacedDigit()
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(color(for: row.quantity))
+                                if onTap != nil {
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.tertiary)
+                                        .font(.caption)
+                                }
+                            }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                         .padding(.vertical, 8)
                         if row.id != rows.last?.id {
                             Divider()

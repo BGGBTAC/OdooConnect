@@ -29,5 +29,5 @@ targets:
         DEVELOPMENT_LANGUAGE: de
         SWIFT_EMIT_LOC_STRINGS: YES
         INFOPLIST_KEY_CFBundleDisplayName: OdooCompanion
-        INFOPLIST_KEY_NSCameraUsageDescription: "Used to attach product photos to quotes."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Used to scan product barcodes during inventory and to attach photos to quotes."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Used to attach images to quotes."

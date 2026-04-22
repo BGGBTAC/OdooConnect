@@ -34,7 +34,9 @@ struct DashboardView: View {
                     .padding(.horizontal)
 
                     adaptivePair(
-                        LowStockCard(rows: model.lowStock),
+                        LowStockCard(rows: model.lowStock) { row in
+                            router.openProduct(id: row.productId)
+                        },
                         RecentOrdersCard(orders: model.recentOrders, currencyCode: code) { order in
                             router.selectedTab = .orders
                             router.ordersPath.append(AppRouter.OrderRoute.detail(order.id))

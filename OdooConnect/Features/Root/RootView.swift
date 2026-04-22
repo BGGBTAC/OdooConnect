@@ -31,6 +31,15 @@ private struct MainTabs: View {
             Tab("Rechnungen", systemImage: "doc.plaintext", value: AppRouter.Tab.invoices) {
                 NavigationStack(path: $router.invoicesPath) { InvoicesListView() }
             }
+            Tab("Produkte", systemImage: "shippingbox.fill", value: AppRouter.Tab.products) {
+                NavigationStack(path: $router.productsPath) { ProductsListView() }
+            }
+            Tab("Versand", systemImage: "truck.box.fill", value: AppRouter.Tab.shipping) {
+                NavigationStack(path: $router.shippingPath) { ShippingListView() }
+            }
+            Tab("Inventur", systemImage: "barcode.viewfinder", value: AppRouter.Tab.inventory) {
+                NavigationStack(path: $router.inventoryPath) { InventoryView() }
+            }
             Tab("Einstellungen", systemImage: "gearshape", value: AppRouter.Tab.settings) {
                 NavigationStack { SettingsView() }
             }
