@@ -1,17 +1,25 @@
 import SwiftUI
 import Charts
 
+/// Donut over confirmed sale.orders, sliced by `invoice_status`. Surfacing
+/// invoice progress instead of raw order state because Odoo writes a `draft`
+/// order for every shopping cart, which makes a state donut useless.
 struct OrderFunnelCard: View {
-    let buckets: [OrderStateBucket]
+    let buckets: [InvoicePipelineBucket]
 
     private var total: Int { buckets.reduce(0) { $0 + $1.count } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Bestellungen nach Status").font(.headline)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rechnungspipeline").font(.headline)
+                Text("Bestätigte Bestellungen nach Rechnungsstatus")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
             if buckets.isEmpty {
                 ContentUnavailableView("Keine Bestellungen", systemImage: "chart.pie")
-                    .frame(height: 180)
+                    .frame(minHeight: 140)
             } else {
                 HStack(alignment: .center, spacing: 16) {
                     Chart(buckets) { bucket in
@@ -21,7 +29,7 @@ struct OrderFunnelCard: View {
                             angularInset: 1.5
                         )
                         .cornerRadius(4)
-                        .foregroundStyle(color(for: bucket.state))
+                        .foregroundStyle(color(for: bucket.status))
                     }
                     .chartLegend(.hidden)
                     .frame(width: 140, height: 140)
@@ -38,7 +46,7 @@ struct OrderFunnelCard: View {
                         ForEach(buckets) { bucket in
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(color(for: bucket.state))
+                                    .fill(color(for: bucket.status))
                                     .frame(width: 8, height: 8)
                                 Text(bucket.label).font(.caption)
                                 Spacer(minLength: 8)
@@ -55,14 +63,13 @@ struct OrderFunnelCard: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    private func color(for state: String) -> Color {
-        switch state {
-        case "draft":  return .gray
-        case "sent":   return .blue
-        case "sale":   return .accentColor
-        case "done":   return .green
-        case "cancel": return .red
-        default:       return .secondary
+    private func color(for status: String) -> Color {
+        switch status {
+        case "to invoice": return .orange
+        case "invoiced":   return .green
+        case "no":         return .secondary
+        case "upselling":  return .blue
+        default:           return .gray
         }
     }
 }

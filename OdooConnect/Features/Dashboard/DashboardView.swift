@@ -29,7 +29,7 @@ struct DashboardView: View {
 
                     adaptivePair(
                         TopProductsCard(products: model.topProducts, currencyCode: code),
-                        OrderFunnelCard(buckets: model.orderBuckets)
+                        OrderFunnelCard(buckets: model.invoicePipeline)
                     )
                     .padding(.horizontal)
 

@@ -4,12 +4,23 @@ struct LowStockCard: View {
     let rows: [LowStockRow]
     var onTap: ((LowStockRow) -> Void)?
 
+    private var subtitle: String {
+        guard let first = rows.first else { return "Lagerbestand-Übersicht" }
+        return first.minQty != nil
+            ? "Unter konfiguriertem Mindestbestand"
+            : "Forecast ≤ 5 Stk (kein Reorder-Rule definiert)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Kritischer Bestand", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                    .font(.headline)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Label("Kritischer Bestand", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Spacer()
                 if !rows.isEmpty {
                     Text("\(rows.count)")
@@ -32,22 +43,8 @@ struct LowStockCard: View {
                         Button {
                             onTap?(row)
                         } label: {
-                            HStack {
-                                Text(row.name)
-                                    .lineLimit(2)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Text("\(row.quantity, specifier: "%.0f") Stk")
-                                    .monospacedDigit()
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(color(for: row.quantity))
-                                if onTap != nil {
-                                    Image(systemName: "chevron.right")
-                                        .foregroundStyle(.tertiary)
-                                        .font(.caption)
-                                }
-                            }
-                            .contentShape(Rectangle())
+                            stockRow(row)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .padding(.vertical, 8)
@@ -62,7 +59,50 @@ struct LowStockCard: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    private func color(for quantity: Double) -> Color {
-        quantity <= 0 ? .red : (quantity <= 2 ? .orange : .yellow)
+    @ViewBuilder
+    private func stockRow(_ row: LowStockRow) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(row.name)
+                    .lineLimit(2)
+                    .foregroundStyle(.primary)
+                HStack(spacing: 8) {
+                    Label("\(row.onHand, specifier: "%.0f")", systemImage: "cube.box")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    if row.forecast != row.onHand {
+                        Label("\(row.forecast, specifier: "%.0f") prog.", systemImage: "calendar")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    if let minQty = row.minQty {
+                        Label("Min \(minQty, specifier: "%.0f")", systemImage: "arrow.down.to.line")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(row.forecast, specifier: "%.0f")")
+                    .monospacedDigit()
+                    .font(.headline)
+                    .foregroundStyle(severityColor(for: row))
+                Text("Forecast").font(.caption2).foregroundStyle(.secondary)
+            }
+            if onTap != nil {
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.tertiary)
+                    .font(.caption)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    private func severityColor(for row: LowStockRow) -> Color {
+        if row.forecast <= 0 { return .red }
+        if let minQty = row.minQty, row.forecast < minQty * 0.5 { return .red }
+        if row.forecast <= 2 { return .orange }
+        return .yellow
     }
 }

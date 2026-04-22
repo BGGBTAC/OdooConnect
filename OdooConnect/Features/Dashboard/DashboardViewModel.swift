@@ -14,7 +14,7 @@ final class DashboardViewModel {
     // Series & lists
     var revenueSeries: [RevenuePoint] = []
     var topProducts: [TopProductRow] = []
-    var orderBuckets: [OrderStateBucket] = []
+    var invoicePipeline: [InvoicePipelineBucket] = []
     var lowStock: [LowStockRow] = []
     var recentOrders: [SaleOrder] = []
 
@@ -48,7 +48,7 @@ final class DashboardViewModel {
 
         async let series       = (try? self.fetchRevenueSeries(client, range: range)) ?? []
         async let topProducts  = (try? self.fetchTopProducts(client, range: range)) ?? []
-        async let buckets      = (try? self.fetchOrderBuckets(client, range: range)) ?? []
+        async let pipeline     = (try? self.fetchInvoicePipeline(client, range: range)) ?? []
         async let lowStockRows = (try? self.fetchLowStock(client)) ?? []
         async let recent       = (try? self.fetchRecentOrders(client)) ?? []
 
@@ -74,7 +74,7 @@ final class DashboardViewModel {
         )
         revenueSeries = await series
         self.topProducts = await topProducts
-        orderBuckets = await buckets
+        invoicePipeline = await pipeline
         lowStock = await lowStockRows
         recentOrders = await recent
         lastRefresh = .now
@@ -164,15 +164,19 @@ final class DashboardViewModel {
         )
     }
 
+    /// KPI badge counter: number of orderpoints currently triggered
+    /// (qty_to_order > 0). Falls back to 0 if no orderpoints exist —
+    /// the LowStock card itself surfaces the fallback list.
     private func fetchLowStockCount(_ client: OdooClient) async throws -> Int {
-        try await client.callKw(
-            model: "stock.quant",
+        let count: Int = (try? await client.callKw(
+            model: "stock.warehouse.orderpoint",
             method: "search_count",
             args: [.array([
-                .array([.string("location_id.usage"), .string("="), .string("internal")]),
-                .array([.string("quantity"), .string("<="), .int(5)])
+                .array([.string("active"), .string("="), .bool(true)]),
+                .array([.string("qty_to_order"), .string(">"), .int(0)])
             ])]
-        )
+        )) ?? 0
+        return count
     }
 
     private func fetchOutstanding(_ client: OdooClient) async throws -> Double {
@@ -225,11 +229,14 @@ final class DashboardViewModel {
         .sorted { $0.bucketStart < $1.bucketStart }
     }
 
+    /// Top products by *quantity sold* (not revenue) — what the merchant
+    /// usually means when they ask "what's selling".
     private func fetchTopProducts(_ client: OdooClient, range: DashboardPeriod.Range) async throws -> [TopProductRow] {
         var domain: [JSON] = [
-            .array([.string("state"), .string("in"), .array([.string("sale"), .string("done")])])
+            .array([.string("state"), .string("in"), .array([.string("sale"), .string("done")])]),
+            .array([.string("product_id.type"), .string("!="), .string("service")])
         ]
-        // sale.order.line doesn't have date_order itself but inherits via order_id
+        // sale.order.line inherits date via order_id
         for clause in periodDomain(range, field: "order_id.date_order") {
             domain.append(clause)
         }
@@ -240,7 +247,7 @@ final class DashboardViewModel {
                 "domain": .array(domain),
                 "fields": .array([.string("price_subtotal:sum"), .string("product_uom_qty:sum")]),
                 "groupby": .array([.string("product_id")]),
-                "orderby": .string("price_subtotal desc"),
+                "orderby": .string("product_uom_qty desc"),
                 "limit": .int(5),
                 "lazy": .bool(false)
             ],
@@ -259,53 +266,116 @@ final class DashboardViewModel {
         }
     }
 
-    private func fetchOrderBuckets(_ client: OdooClient, range: DashboardPeriod.Range) async throws -> [OrderStateBucket] {
+    /// Pipeline view: confirmed sale.orders only, grouped by `invoice_status`.
+    /// Skips raw `state` because Odoo writes a `draft` order for every
+    /// website cart, which makes a state-based pie chart useless.
+    private func fetchInvoicePipeline(_ client: OdooClient, range: DashboardPeriod.Range) async throws -> [InvoicePipelineBucket] {
+        var domain: [JSON] = [
+            .array([.string("state"), .string("in"), .array([.string("sale"), .string("done")])])
+        ]
+        domain.append(contentsOf: periodDomain(range))
         let rows = try await client.callKw(
             model: "sale.order",
             method: "read_group",
             kwargs: [
-                "domain": .array(periodDomain(range)),
+                "domain": .array(domain),
                 "fields": .array([.string("amount_total:sum")]),
-                "groupby": .array([.string("state")]),
+                "groupby": .array([.string("invoice_status")]),
                 "lazy": .bool(false)
             ],
             as: [[String: JSON]].self
         )
-        return rows.compactMap { row -> OrderStateBucket? in
-            guard let state = row["state"]?.stringValue else { return nil }
-            let count = row["__count"]?.intValue ?? row["state_count"]?.intValue ?? 0
+        return rows.compactMap { row -> InvoicePipelineBucket? in
+            guard let status = row["invoice_status"]?.stringValue else { return nil }
+            let count = row["__count"]?.intValue ?? row["invoice_status_count"]?.intValue ?? 0
             let total = row["amount_total"]?.doubleValue ?? 0
-            return OrderStateBucket(state: state, count: count, total: total)
+            return InvoicePipelineBucket(status: status, count: count, total: total)
         }
     }
 
+    /// Reorder-aware low stock list.
+    ///
+    /// Strategy:
+    /// 1. If the customer has configured `stock.warehouse.orderpoint`
+    ///    rules, surface the products whose `virtual_available` falls
+    ///    below their `product_min_qty`. These are the actionable rows
+    ///    — the customer told us "reorder this when it gets low".
+    /// 2. Otherwise fall back to storable, sellable products sorted by
+    ///    forecast asc with a 5-unit floor — pragmatic but generic.
     private func fetchLowStock(_ client: OdooClient) async throws -> [LowStockRow] {
-        let rows = try await client.callKw(
-            model: "stock.quant",
-            method: "read_group",
-            kwargs: [
-                "domain": .array([
-                    .array([.string("location_id.usage"), .string("="), .string("internal")])
-                ]),
-                "fields": .array([.string("quantity:sum")]),
-                "groupby": .array([.string("product_id")]),
-                "orderby": .string("quantity asc"),
-                "limit": .int(10),
-                "lazy": .bool(false)
-            ],
-            as: [[String: JSON]].self
-        )
-        return rows.compactMap { row -> LowStockRow? in
-            guard
-                let tuple = row["product_id"]?.arrayValue,
-                tuple.count == 2,
-                let id = tuple[0].intValue,
-                let name = tuple[1].stringValue
-            else { return nil }
-            let qty = row["quantity"]?.doubleValue ?? 0
-            guard qty <= 5 else { return nil } // threshold
-            return LowStockRow(productId: id, name: name, quantity: qty)
+        let orderpoints: [OrderpointDTO] = (try? await client.searchRead(
+            model: "stock.warehouse.orderpoint",
+            domain: [.array([.string("active"), .string("="), .bool(true)])],
+            fields: ["product_id", "product_min_qty"],
+            limit: 200
+        )) ?? []
+
+        if !orderpoints.isEmpty {
+            return try await fetchLowStockFromOrderpoints(client, orderpoints: orderpoints)
         }
+        return try await fetchLowStockFallback(client)
+    }
+
+    private func fetchLowStockFromOrderpoints(
+        _ client: OdooClient,
+        orderpoints: [OrderpointDTO]
+    ) async throws -> [LowStockRow] {
+        let minByProduct: [Int: Double] = Dictionary(
+            orderpoints.map { ($0.product_id.id, $0.product_min_qty) },
+            uniquingKeysWith: max
+        )
+        let productIds = Array(minByProduct.keys)
+        guard !productIds.isEmpty else { return [] }
+
+        let products: [LowStockProductDTO] = try await client.searchRead(
+            model: "product.product",
+            domain: [.array([.string("id"), .string("in"), .array(productIds.map { .int($0) })])],
+            fields: LowStockProductDTO.fields,
+            limit: 500
+        )
+        return products.compactMap { p -> LowStockRow? in
+            let minQty = minByProduct[p.id] ?? 0
+            guard p.virtual_available < minQty else { return nil }
+            return LowStockRow(
+                productId: p.id,
+                name: p.name,
+                onHand: p.qty_available,
+                forecast: p.virtual_available,
+                minQty: minQty
+            )
+        }
+        .sorted { ($0.forecast - ($0.minQty ?? 0)) < ($1.forecast - ($1.minQty ?? 0)) }
+        .prefix(10)
+        .map { $0 }
+    }
+
+    private func fetchLowStockFallback(_ client: OdooClient) async throws -> [LowStockRow] {
+        // Keep the limit small and sort client-side: qty_available /
+        // virtual_available are computed and not reliably orderable
+        // server-side across Odoo versions.
+        let products: [LowStockProductDTO] = try await client.searchRead(
+            model: "product.product",
+            domain: [
+                .array([.string("type"), .string("="), .string("consu")]),
+                .array([.string("is_storable"), .string("="), .bool(true)]),
+                .array([.string("sale_ok"), .string("="), .bool(true)])
+            ],
+            fields: LowStockProductDTO.fields,
+            limit: 500
+        )
+        return products
+            .filter { $0.virtual_available <= 5 }
+            .sorted { $0.virtual_available < $1.virtual_available }
+            .prefix(10)
+            .map {
+                LowStockRow(
+                    productId: $0.id,
+                    name: $0.name,
+                    onHand: $0.qty_available,
+                    forecast: $0.virtual_available,
+                    minQty: nil
+                )
+            }
     }
 
     private func fetchRecentOrders(_ client: OdooClient) async throws -> [SaleOrder] {
@@ -317,4 +387,18 @@ final class DashboardViewModel {
             order: "date_order desc"
         )
     }
+}
+
+private struct OrderpointDTO: Decodable, Sendable {
+    let product_id: Many2One
+    let product_min_qty: Double
+}
+
+private struct LowStockProductDTO: Decodable, Sendable {
+    let id: Int
+    let name: String
+    let qty_available: Double
+    let virtual_available: Double
+
+    static let fields: [String] = ["id", "name", "qty_available", "virtual_available"]
 }

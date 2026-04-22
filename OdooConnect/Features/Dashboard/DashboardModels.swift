@@ -28,20 +28,23 @@ struct TopProductRow: Identifiable, Sendable, Equatable {
     var id: Int { productId }
 }
 
-struct OrderStateBucket: Identifiable, Sendable, Equatable {
-    let state: String
+/// One slice of the invoice pipeline — confirmed sale.orders grouped by
+/// their `invoice_status`. We deliberately *don't* surface raw order
+/// states because Odoo writes a `draft` order for every shopping cart,
+/// which makes the funnel meaningless on a busy shop.
+struct InvoicePipelineBucket: Identifiable, Sendable, Equatable {
+    let status: String
     let count: Int
     let total: Double
-    var id: String { state }
+    var id: String { status }
 
     var label: String {
-        switch state {
-        case "draft":  return "Entwurf"
-        case "sent":   return "Angebot"
-        case "sale":   return "Bestellt"
-        case "done":   return "Abgeschlossen"
-        case "cancel": return "Storniert"
-        default:       return state.capitalized
+        switch status {
+        case "to invoice":  return "Zu fakturieren"
+        case "invoiced":    return "Fakturiert"
+        case "no":          return "Keine Rechnung"
+        case "upselling":   return "Nachverkauf"
+        default:            return status.capitalized
         }
     }
 }
@@ -49,8 +52,21 @@ struct OrderStateBucket: Identifiable, Sendable, Equatable {
 struct LowStockRow: Identifiable, Sendable, Equatable {
     let productId: Int
     let name: String
-    let quantity: Double
+    /// On-hand quantity in internal locations.
+    let onHand: Double
+    /// Forecast = onHand + incoming – outgoing reservations.
+    let forecast: Double
+    /// Configured reorder threshold via stock.warehouse.orderpoint, or `nil`
+    /// when the customer has no orderpoint defined for this product.
+    let minQty: Double?
     var id: Int { productId }
+
+    /// `true` when the customer has configured a reorder rule that this
+    /// product is currently below — these are the most actionable rows.
+    var isBelowReorderRule: Bool {
+        guard let minQty else { return false }
+        return forecast < minQty
+    }
 }
 
 struct ShopKPIs: Sendable, Equatable {
