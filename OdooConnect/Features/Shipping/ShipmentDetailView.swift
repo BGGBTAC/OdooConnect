@@ -70,6 +70,27 @@ struct ShipmentDetailView: View {
 
                 if picking.isActionable {
                     Section {
+                        NavigationLink {
+                            OrderPickingView(
+                                pickingId: picking.id,
+                                pickingName: picking.name
+                            ) {
+                                await load()
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "barcode.viewfinder")
+                                Text("Pick this order")
+                                    .bold()
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .listRowBackground(Theme.brand.opacity(0.10))
+                        .foregroundStyle(Theme.brand)
+
                         Button {
                             Task { await validate(picking) }
                         } label: {
@@ -84,6 +105,11 @@ struct ShipmentDetailView: View {
                         }
                         .buttonStyle(.glassProminent)
                         .disabled(isValidating)
+                    } header: {
+                        Text("Aktionen")
+                    } footer: {
+                        Text("Pick this order: scanne Barcodes, fülle Mengen, wähle Versender und versende in einem Schritt.")
+                            .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
             }

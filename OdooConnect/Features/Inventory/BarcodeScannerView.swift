@@ -2,14 +2,35 @@ import SwiftUI
 @preconcurrency import AVFoundation
 import UIKit
 
-/// Thin AVFoundation wrapper. Fires `onScan` once per resolved code and then
-/// ignores further frames until the parent dismisses or resets the view.
+/// AVFoundation-backed scanner. Single-shot by default (fires `onScan`
+/// once and ignores further frames); `mode = .continuous` keeps the
+/// camera live and re-arms after a short debounce so repeated scans
+/// (e.g. order picking) don't require dismissing the view.
 struct BarcodeScannerView: UIViewControllerRepresentable {
+    enum Mode: Sendable {
+        case single
+        /// Re-arms after `debounce`. Identical codes within `debounce`
+        /// of each other are dropped to avoid double-firing the same
+        /// barcode the user is still pointing the camera at.
+        case continuous(debounce: Duration)
+    }
+
+    let mode: Mode
     let onScan: (String) -> Void
     let onError: (String) -> Void
 
+    init(
+        mode: Mode = .single,
+        onScan: @escaping (String) -> Void,
+        onError: @escaping (String) -> Void
+    ) {
+        self.mode = mode
+        self.onScan = onScan
+        self.onError = onError
+    }
+
     func makeCoordinator() -> Coordinator {
-        Coordinator(onScan: onScan, onError: onError)
+        Coordinator(mode: mode, onScan: onScan, onError: onError)
     }
 
     func makeUIViewController(context: Context) -> ScannerController {
@@ -22,11 +43,14 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
+        let mode: Mode
         let onScan: (String) -> Void
         let onError: (String) -> Void
-        private var handled = false
+        private var lastScan: (code: String, time: Date)?
+        private var armed = true
 
-        init(onScan: @escaping (String) -> Void, onError: @escaping (String) -> Void) {
+        init(mode: Mode, onScan: @escaping (String) -> Void, onError: @escaping (String) -> Void) {
+            self.mode = mode
             self.onScan = onScan
             self.onError = onError
         }
@@ -41,10 +65,31 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
                 let value = first.stringValue
             else { return }
             Task { @MainActor [weak self] in
-                guard let self, !self.handled else { return }
-                self.handled = true
+                self?.handle(value)
+            }
+        }
+
+        private func handle(_ code: String) {
+            guard armed else { return }
+
+            switch mode {
+            case .single:
+                armed = false
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-                self.onScan(value)
+                onScan(code)
+
+            case .continuous(let debounce):
+                let now = Date()
+                let debounceSeconds = TimeInterval(debounce.components.seconds) +
+                    TimeInterval(debounce.components.attoseconds) / 1e18
+                if let last = lastScan,
+                   last.code == code,
+                   now.timeIntervalSince(last.time) < debounceSeconds {
+                    return
+                }
+                lastScan = (code, now)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                onScan(code)
             }
         }
     }

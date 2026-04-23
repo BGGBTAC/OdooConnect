@@ -4,6 +4,7 @@ struct InventoryView: View {
     @Environment(AuthManager.self) private var auth
     @Environment(AppRouter.self) private var router
     @State private var showingScanner = false
+    @State private var showingProductInfo = false
     @State private var lowStock: [StockQuant] = []
     @State private var searchText = ""
     @State private var searchResults: [ProductDetail] = []
@@ -16,16 +17,36 @@ struct InventoryView: View {
         List {
             Section {
                 Button {
-                    showingScanner = true
+                    showingProductInfo = true
                 } label: {
                     HStack {
                         Image(systemName: "barcode.viewfinder").font(.title2)
+                            .foregroundStyle(Theme.brand)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Barcode scannen").font(.headline)
-                            Text("Produkt suchen und Bestand anpassen")
+                            Text("Produkt-Info scannen").font(.headline)
+                            Text("Bestand pro Lager, letzter Verkauf, Korrektur")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showingScanner = true
+                } label: {
+                    HStack {
+                        Image(systemName: "slider.horizontal.below.square.filled.and.square").font(.title2)
+                            .foregroundStyle(Theme.warning)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Bestand korrigieren").font(.headline)
+                            Text("Schneller Scan, sofort anpassen")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 4)
                 }
@@ -123,6 +144,11 @@ struct InventoryView: View {
                 }
             }
             .presentationDetents([.medium, .large])
+        }
+        .fullScreenCover(isPresented: $showingProductInfo) {
+            NavigationStack {
+                ProductInfoView()
+            }
         }
         .alert("Scanner", isPresented: .constant(scanError != nil)) {
             Button("OK") { scanError = nil }
