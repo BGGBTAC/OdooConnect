@@ -69,6 +69,7 @@ struct OdooConnectApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .tint(Theme.brand)
                 .environment(auth)
                 .modelContainer(container)
                 .environment(draftSync)

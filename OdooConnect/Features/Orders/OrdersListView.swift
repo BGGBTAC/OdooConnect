@@ -31,9 +31,10 @@ struct OrdersListView: View {
         }
         .overlay {
             if orders.isEmpty && !isLoading {
-                ContentUnavailableView(
-                    searchText.isEmpty ? "Keine Bestellungen" : "Keine Treffer",
-                    systemImage: "cart"
+                BrandedEmptyState(
+                    title: searchText.isEmpty ? "Noch keine Bestellungen" : "Keine Treffer",
+                    systemImage: "cart",
+                    message: searchText.isEmpty ? nil : "Versuche einen anderen Suchbegriff."
                 )
             }
         }

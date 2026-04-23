@@ -26,6 +26,9 @@
         }
       }
     },
+    "%.0f prog." : {
+
+    },
     "%.0f Stk" : {
 
     },
@@ -43,6 +46,9 @@
       }
     },
     "%lld" : {
+
+    },
+    "%lld Varianten gesamt" : {
 
     },
     "+%lld" : {
@@ -120,13 +126,13 @@
     "Bestand anpassen" : {
 
     },
+    "Bestätigte Bestellungen nach Rechnungsstatus" : {
+
+    },
     "Bestätigung" : {
 
     },
     "Bestellungen" : {
-
-    },
-    "Bestellungen nach Status" : {
 
     },
     "Beträge" : {
@@ -175,6 +181,9 @@
 
     },
     "Firma" : {
+
+    },
+    "Forecast" : {
 
     },
     "Funktioniert mit Passwort, Google, Microsoft — alles was dein Odoo unterstützt. Setzt das `odooconnect_bridge` Modul auf dem Server voraus." : {
@@ -282,10 +291,16 @@
     "Manuell mit API-Key" : {
 
     },
+    "Meistverkauft im Zeitraum" : {
+
+    },
     "Menge" : {
 
     },
     "Menge: %.2f" : {
+
+    },
+    "Min %.0f" : {
 
     },
     "Name oder Artikelnummer" : {
@@ -351,13 +366,13 @@
     "Preise" : {
 
     },
-    "Produkt" : {
-
-    },
     "Produkt hinzufügen" : {
 
     },
     "Produkt suchen und Bestand anpassen" : {
+
+    },
+    "Produktbild vergrößern" : {
 
     },
     "Produkte" : {
@@ -367,6 +382,9 @@
 
     },
     "Rechnungen" : {
+
+    },
+    "Rechnungspipeline" : {
 
     },
     "Scanner" : {
@@ -444,6 +462,9 @@
     "Unterschrift löschen" : {
 
     },
+    "Variante" : {
+
+    },
     "Verbindung" : {
 
     },
@@ -466,6 +487,9 @@
 
     },
     "Versuche einen anderen Suchbegriff." : {
+
+    },
+    "Vorlage: %@" : {
 
     },
     "Währung" : {

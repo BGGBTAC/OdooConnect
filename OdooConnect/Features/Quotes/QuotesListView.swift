@@ -111,12 +111,12 @@ struct QuotesListView: View {
         }
         .overlay {
             if model.quotes.isEmpty && filteredDrafts.isEmpty && !model.isLoading {
-                ContentUnavailableView(
-                    searchText.isEmpty ? "Keine Angebote" : "Keine Treffer",
+                BrandedEmptyState(
+                    title: searchText.isEmpty ? "Noch keine Angebote" : "Keine Treffer",
                     systemImage: "doc.text",
-                    description: Text(searchText.isEmpty
-                        ? "Tippe auf +, um ein neues Angebot zu erstellen."
-                        : "Versuche einen anderen Suchbegriff.")
+                    message: searchText.isEmpty
+                        ? "Tippe auf + um ein neues Angebot zu erstellen."
+                        : "Versuche einen anderen Suchbegriff."
                 )
             }
         }

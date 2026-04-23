@@ -24,9 +24,10 @@ struct InvoicesListView: View {
         }
         .overlay {
             if invoices.isEmpty && !isLoading {
-                ContentUnavailableView(
-                    searchText.isEmpty ? "Keine Rechnungen" : "Keine Treffer",
-                    systemImage: "doc.plaintext"
+                BrandedEmptyState(
+                    title: searchText.isEmpty ? "Noch keine Rechnungen" : "Keine Treffer",
+                    systemImage: "doc.plaintext",
+                    message: searchText.isEmpty ? nil : "Versuche einen anderen Suchbegriff."
                 )
             }
         }

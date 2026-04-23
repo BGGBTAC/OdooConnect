@@ -45,5 +45,6 @@ private struct MainTabs: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .tint(Theme.brand)
     }
 }
