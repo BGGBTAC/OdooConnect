@@ -47,11 +47,13 @@ final class OAuthClient {
         return try OAuthResult(callback: callbackURL)
     }
 
+    /// Open the bridge endpoint directly. Odoo's `auth='user'` machinery
+    /// will detect "no session" and redirect to its own login page with the
+    /// proper `?redirect=` already set internally — far more reliable than
+    /// us hand-crafting `/web/login?redirect=...`, which Odoo sometimes
+    /// drops across OAuth-provider round-trips.
     private static func buildAuthURL(serverURL: URL) -> URL {
-        var components = URLComponents(url: serverURL.appendingPathComponent("/web/login"),
-                                       resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "redirect", value: bridgePath)]
-        return components.url!
+        serverURL.appendingPathComponent(bridgePath)
     }
 
     private static func translate(_ error: Error) -> OAuthError {
@@ -123,11 +125,13 @@ enum OAuthError: LocalizedError {
 private final class OAuthPresentationProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
     nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         MainActor.assumeIsolated {
-            UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .flatMap { $0.windows }
-                .first(where: { $0.isKeyWindow })
-                ?? ASPresentationAnchor()
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+            // The user can only tap the OAuth button when at least one
+            // window scene exists; the force-unwrap here is for the
+            // never-happens path.
+            return scene?.windows.first(where: { $0.isKeyWindow })
+                ?? ASPresentationAnchor(windowScene: scene!)
         }
     }
 }

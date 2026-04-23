@@ -125,10 +125,7 @@ struct LoginView: View {
             .animation(.snappy, value: oauthInFlight)
 
             if let oauthError {
-                Label(oauthError, systemImage: "exclamationmark.triangle.fill")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.danger)
-                    .padding(.horizontal, Spacing.sm)
+                bridgeMissingHint(message: oauthError)
             } else {
                 Text("Funktioniert mit Passwort, Google, Microsoft — alles was dein Odoo unterstützt. Setzt das `odooconnect_bridge` Modul auf dem Server voraus.")
                     .font(.footnote)
@@ -136,6 +133,54 @@ struct LoginView: View {
                     .padding(.horizontal, Spacing.sm)
             }
         }
+    }
+
+    @ViewBuilder
+    private func bridgeMissingHint(message: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Label("Browser-Login hat nicht zurück zur App geleitet", systemImage: "exclamationmark.triangle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.warning)
+
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Wahrscheinlichste Ursache:")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("Das `odooconnect_bridge` Odoo-Modul ist auf deinem Server nicht installiert. Ohne dieses Modul gibt es keinen Endpoint, der einen API-Key generiert und zur App zurückleitet — du landest stattdessen im normalen Odoo Backend.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, Spacing.xs)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Test:")
+                    .font(.caption.weight(.semibold))
+                Text("Öffne in Safari (eingeloggt in Odoo): \(testURL)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                Text("Erscheint die Seite \"Erfolg / wirst zurückgeleitet\" - alles ok. Bei 404 fehlt das Modul.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, Spacing.xs)
+
+            Text("Wenn der Test funktioniert aber der App-Login trotzdem im /web hängenbleibt: prüfe Odoo Server Logs auf \"OdooConnect bridge minted API key\".")
+                .font(.caption.italic())
+                .foregroundStyle(.tertiary)
+                .padding(.top, Spacing.xs)
+        }
+        .cardSurface(.inset)
+    }
+
+    private var testURL: String {
+        let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return "\(trimmed)/api/odooconnect/oauth_complete"
     }
 
     private var advancedDisclosure: some View {
@@ -265,12 +310,19 @@ struct LoginView: View {
         guard let url = URL(string: serverURL) else { return }
         oauthError = nil
         oauthInFlight = true
+        let startedAt = Date()
         defer { oauthInFlight = false }
         do {
             let result = try await oauthClient.signIn(serverURL: url)
             await auth.completeOAuth(serverURL: url, result: result)
         } catch OAuthError.cancelled {
-            // user dismissed — silent
+            // If the user spent enough time in the browser to plausibly
+            // have logged in, treat the cancel as "the bridge endpoint
+            // didn't redirect me back" — most often the bridge module
+            // isn't installed yet. < 2s → genuine intentional cancel.
+            if Date().timeIntervalSince(startedAt) > 2 {
+                oauthError = "Der Browser wurde geschlossen ohne dass die App eine Antwort vom Server bekommen hat."
+            }
         } catch {
             oauthError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

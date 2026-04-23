@@ -9,6 +9,12 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
+                PeriodPickerPills(selection: Binding(
+                    get: { model.period },
+                    set: { model.period = $0 }
+                ))
+                .padding(.top, Spacing.xs)
+
                 RevenueHeroCard(
                     revenue: model.kpis.revenue,
                     currencyCode: code,
@@ -49,11 +55,13 @@ struct DashboardView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.pageVeil.ignoresSafeArea(edges: .top))
-        .safeAreaInset(edge: .top, spacing: 0) {
-            stickyPickerBar
-        }
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                refreshChip
+            }
+        }
         .refreshable { await model.load(using: auth.client) }
         .task { await model.load(using: auth.client) }
         .alert("Fehler", isPresented: .constant(model.error != nil)) {
@@ -63,31 +71,14 @@ struct DashboardView: View {
         }
     }
 
-    private var stickyPickerBar: some View {
-        HStack(spacing: Spacing.sm) {
-            PeriodPickerPills(selection: Binding(
-                get: { model.period },
-                set: { model.period = $0 }
-            ))
-            statusChip
-        }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.top, Spacing.sm)
-        .padding(.bottom, Spacing.md)
-        .background(.bar)
-    }
-
     @ViewBuilder
-    private var statusChip: some View {
+    private var refreshChip: some View {
         if model.isLoading {
-            ProgressView()
-                .controlSize(.small)
-                .padding(.horizontal, Spacing.md)
+            ProgressView().controlSize(.small)
         } else if let refreshed = model.lastRefresh {
             Text(refreshed, style: .relative)
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, Spacing.md)
         }
     }
 
