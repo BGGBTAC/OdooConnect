@@ -86,8 +86,35 @@ struct LoginView: View {
                 .focused($focusedField, equals: .serverURL)
                 .submitLabel(.next)
                 .padding(.vertical, Spacing.sm)
+            if let hint = serverURLHint {
+                Label(hint, systemImage: "exclamationmark.shield.fill")
+                    .font(.caption)
+                    .foregroundStyle(Theme.danger)
+            }
         }
         .cardSurface(.standard)
+    }
+
+    /// Returns the server URL only if it's a syntactically valid HTTPS URL
+    /// with a host. http://, file://, ftp:// etc. are rejected here so the
+    /// API key can never be sent over a cleartext channel.
+    private var validServerURL: URL? {
+        let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard
+            let url = URL(string: trimmed),
+            url.scheme?.lowercased() == "https",
+            let host = url.host(), !host.isEmpty
+        else { return nil }
+        return url
+    }
+
+    private var serverURLHint: String? {
+        let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, validServerURL == nil else { return nil }
+        if let url = URL(string: trimmed), url.scheme?.lowercased() == "http" {
+            return "Nur HTTPS — über HTTP würde dein API-Key im Klartext übertragen."
+        }
+        return "Bitte vollständige HTTPS-URL eintragen, z.B. https://mycompany.odoo.com"
     }
 
     private var primaryAction: some View {
@@ -120,8 +147,8 @@ struct LoginView: View {
                 .shadow(color: Theme.brand.opacity(0.45), radius: 16, x: 0, y: 8)
             }
             .buttonStyle(.plain)
-            .disabled(URL(string: serverURL) == nil || oauthInFlight)
-            .opacity((URL(string: serverURL) == nil || oauthInFlight) ? 0.55 : 1.0)
+            .disabled(validServerURL == nil || oauthInFlight)
+            .opacity((validServerURL == nil || oauthInFlight) ? 0.55 : 1.0)
             .animation(.snappy, value: oauthInFlight)
 
             if let oauthError {
@@ -283,7 +310,7 @@ struct LoginView: View {
     // MARK: - Helpers
 
     private var canSubmitManual: Bool {
-        URL(string: serverURL) != nil &&
+        validServerURL != nil &&
         !database.trimmingCharacters(in: .whitespaces).isEmpty &&
         !login.trimmingCharacters(in: .whitespaces).isEmpty &&
         !apiKey.isEmpty
@@ -302,12 +329,12 @@ struct LoginView: View {
     }
 
     private func performManualSignIn() async {
-        guard let url = URL(string: serverURL) else { return }
+        guard let url = validServerURL else { return }
         await auth.signIn(baseURL: url, database: database, login: login, apiKey: apiKey)
     }
 
     private func performOAuth() async {
-        guard let url = URL(string: serverURL) else { return }
+        guard let url = validServerURL else { return }
         oauthError = nil
         oauthInFlight = true
         let startedAt = Date()

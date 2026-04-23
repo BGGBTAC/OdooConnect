@@ -25,6 +25,15 @@ final class AuthManager {
     }
 
     func signIn(baseURL: URL, database: String, login: String, apiKey: String) async {
+        // Belt-and-braces: LoginView already enforces this, but a future
+        // caller (deep link, restored config) might forget. Refusing
+        // anything but HTTPS here means the API key can never leave the
+        // device over a cleartext channel.
+        guard baseURL.scheme?.lowercased() == "https" else {
+            self.lastError = "Server-URL muss HTTPS verwenden."
+            self.state = .signedOut
+            return
+        }
         state = .signingIn
         lastError = nil
         do {
