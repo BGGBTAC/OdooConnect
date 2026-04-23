@@ -1,536 +1,1738 @@
 {
-  "sourceLanguage" : "de",
-  "strings" : {
-    "" : {
-
-    },
-    "-%lld" : {
-
-    },
-    "—" : {
-
-    },
-    "· %@" : {
-
-    },
-    "%.0f" : {
-
-    },
-    "%.0f %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$.0f %2$@"
+  "sourceLanguage": "de",
+  "strings": {
+    "": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ""
           }
         }
       }
     },
-    "%.0f prog." : {
-
-    },
-    "%.0f Stk" : {
-
-    },
-    "%.2f" : {
-
-    },
-    "%.2f × %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$.2f × %2$@"
+    "-%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "-%lld"
           }
         }
       }
     },
-    "%lld" : {
-
-    },
-    "%lld Varianten gesamt" : {
-
-    },
-    "+%lld" : {
-
-    },
-    "Abbrechen" : {
-
-    },
-    "Abmelden" : {
-
-    },
-    "Aktionen" : {
-
-    },
-    "Aktiv" : {
-
-    },
-    "Aktualisieren" : {
-
-    },
-    "Alles auf Lager" : {
-
-    },
-    "Als versendet markieren" : {
-
-    },
-    "Ändern" : {
-
-    },
-    "Angebote" : {
-
-    },
-    "Anzahl" : {
-
-    },
-    "API-Keys erstellst du in Odoo unter Einstellungen → Benutzer → Konto-Sicherheit → API-Keys." : {
-
-    },
-    "App" : {
-
-    },
-    "Artikelnummer" : {
-
-    },
-    "Backorder erforderlich" : {
-
-    },
-    "Barcode" : {
-
-    },
-    "Barcode scannen" : {
-
-    },
-    "Bearbeiten" : {
-
-    },
-    "Benachrichtigungen" : {
-
-    },
-    "Benutzer" : {
-
-    },
-    "Beschreibung" : {
-
-    },
-    "Bestand" : {
-
-    },
-    "Bestand anpassen" : {
-
-    },
-    "Bestätigte Bestellungen nach Rechnungsstatus" : {
-
-    },
-    "Bestätigung" : {
-
-    },
-    "Bestellungen" : {
-
-    },
-    "Beträge" : {
-
-    },
-    "Browser-Login hat nicht zurück zur App geleitet" : {
-
-    },
-    "Code im grünen Rahmen ausrichten" : {
-
-    },
-    "Das `odooconnect_bridge` Odoo-Modul ist auf deinem Server nicht installiert. Ohne dieses Modul gibt es keinen Endpoint, der einen API-Key generiert und zur App zurückleitet — du landest stattdessen im normalen Odoo Backend." : {
-
-    },
-    "Dashboard" : {
-
-    },
-    "Datenbank" : {
-
-    },
-    "Datum" : {
-
-    },
-    "Dein Odoo. In der Hand." : {
-
-    },
-    "Einkaufbar" : {
-
-    },
-    "Einkaufspreis" : {
-
-    },
-    "Einstellungen" : {
-
-    },
-    "Entwurf bearbeiten" : {
-
-    },
-    "Erneut" : {
-
-    },
-    "Erscheint die Seite \"Erfolg / wirst zurückgeleitet\" - alles ok. Bei 404 fehlt das Modul." : {
-
-    },
-    "Fehler" : {
-
-    },
-    "Fehlgeschlagen" : {
-
-    },
-    "Fertig" : {
-
-    },
-    "Filter" : {
-
-    },
-    "Firma" : {
-
-    },
-    "Forecast" : {
-
-    },
-    "Funktioniert mit Passwort, Google, Microsoft — alles was dein Odoo unterstützt. Setzt das `odooconnect_bridge` Modul auf dem Server voraus." : {
-
-    },
-    "Für die Lieferung **%@** wurden nicht alle Mengen vollständig versendet. Wie soll der Restbestand behandelt werden?" : {
-
-    },
-    "Geplant" : {
-
-    },
-    "Gesamt" : {
-
-    },
-    "Hinweis" : {
-
-    },
-    "https://mycompany.odoo.com" : {
-
-    },
-    "Inventur" : {
-
-    },
-    "Jetzt synchronisieren" : {
-
-    },
-    "Kategorie" : {
-
-    },
-    "Kein Bestand an internen Lagerorten. Bitte Standort zuerst in Odoo einrichten." : {
-
-    },
-    "Kein verfügbarer Bestand auf internen Standorten." : {
-
-    },
-    "Keine Artikel unter der Schwelle." : {
-
-    },
-    "Keine Bestellungen" : {
-
-    },
-    "Keine Lieferungen" : {
-
-    },
-    "Keine Produkte" : {
-
-    },
-    "Keine Treffer" : {
-
-    },
-    "Keine Treffer." : {
-
-    },
-    "Keine Verkäufe" : {
-
-    },
-    "Kopieren" : {
-
-    },
-    "Kritischer Bestand" : {
-
-    },
-    "Kunde" : {
-
-    },
-    "Kunde oder Nummer" : {
-
-    },
-    "Kunden" : {
-
-    },
-    "Lade..." : {
-
-    },
-    "Lagerbestand" : {
-
-    },
-    "Lagerort" : {
-
-    },
-    "Letzte Bestellungen" : {
-
-    },
-    "Letzter Sync" : {
-
-    },
-    "Listenpreis" : {
-
-    },
-    "Lokal gespeichert" : {
-
-    },
-    "Lokale Entwürfe" : {
-
-    },
-    "Löschen" : {
-
-    },
-    "Manuell mit API-Key" : {
-
-    },
-    "Meistverkauft im Zeitraum" : {
-
-    },
-    "Menge" : {
-
-    },
-    "Menge: %.2f" : {
-
-    },
-    "Min %.0f" : {
-
-    },
-    "Mit API-Key anmelden" : {
-
-    },
-    "Name oder Artikelnummer" : {
-
-    },
-    "Name, Artikelnr. oder Barcode" : {
-
-    },
-    "Name, Artikelnummer, Barcode" : {
-
-    },
-    "Name, E‑Mail, Stadt" : {
-
-    },
-    "Netto" : {
-
-    },
-    "Neu" : {
-
-    },
-    "Neue Bestellungen melden" : {
-
-    },
-    "Neue Menge" : {
-
-    },
-    "Neues Angebot" : {
-
-    },
-    "Nicht gefunden" : {
-
-    },
-    "Noch keine Bestellungen" : {
-
-    },
-    "Nummer" : {
-
-    },
-    "Nummer, Quelle, Kunde" : {
-
-    },
-    "Odoo Server" : {
-
-    },
-    "OdooCompanion" : {
-
-    },
-    "Offen" : {
-
-    },
-    "Offline-Entwürfe" : {
-
-    },
-    "Öffne in Safari (eingeloggt in Odoo): %@" : {
-
-    },
-    "OK" : {
-
-    },
-    "Positionen" : {
-
-    },
-    "Preis" : {
-
-    },
-    "Preise" : {
-
-    },
-    "Produkt hinzufügen" : {
-
-    },
-    "Produkt suchen und Bestand anpassen" : {
-
-    },
-    "Produktbild vergrößern" : {
-
-    },
-    "Produkte" : {
-
-    },
-    "Quelle" : {
-
-    },
-    "Rechnungen" : {
-
-    },
-    "Rechnungspipeline" : {
-
-    },
-    "Scanner" : {
-
-    },
-    "Server" : {
-
-    },
-    "Sichtbarkeit" : {
-
-    },
-    "Signiert" : {
-
-    },
-    "SKU-001" : {
-
-    },
-    "Speichern" : {
-
-    },
-    "Stammdaten" : {
-
-    },
-    "Standort suchen" : {
-
-    },
-    "Status" : {
-
-    },
-    "Suchergebnisse" : {
-
-    },
-    "Summe" : {
-
-    },
-    "Synchronisiert" : {
-
-    },
-    "t" : {
-
-    },
-    "Test:" : {
-
-    },
-    "Top Produkte" : {
-
-    },
-    "Tracking" : {
-
-    },
-    "Über" : {
-
-    },
-    "Über Browser anmelden" : {
-
-    },
-    "UID" : {
-
-    },
-    "Umlagern" : {
-
-    },
-    "Umlagerung" : {
-
-    },
-    "Umlagerung ausführen" : {
-
-    },
-    "Umsatz" : {
-
-    },
-    "Unternehmen" : {
-
-    },
-    "Unterschreiben" : {
-
-    },
-    "Unterschrift löschen" : {
-
-    },
-    "v" : {
-
-    },
-    "Variante" : {
-
-    },
-    "Verbindung" : {
-
-    },
-    "Verfügbar: %.0f" : {
-
-    },
-    "Vergleich:" : {
-
-    },
-    "Verkauf, Lager, Lieferung & Inventur — direkt vom iPhone und iPad." : {
-
-    },
-    "Verkaufbar" : {
-
-    },
-    "Verkäufe 30 Tage" : {
-
-    },
-    "Versand" : {
-
-    },
-    "Versender" : {
-
-    },
-    "Versendet" : {
-
-    },
-    "Vorlage: %@" : {
-
-    },
-    "Wahrscheinlichste Ursache:" : {
-
-    },
-    "Währung" : {
-
-    },
-    "Wartet auf Sync" : {
-
-    },
-    "Wenn der Test funktioniert aber der App-Login trotzdem im /web hängenbleibt: prüfe Odoo Server Logs auf \"OdooConnect bridge minted API key\"." : {
-
-    },
-    "Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen." : {
-
-    },
-    "Zahlung" : {
-
-    },
-    "Zeit" : {
-
-    },
-    "Ziel" : {
-
-    },
-    "Zwischensumme" : {
-
+    "—": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        }
+      }
+    },
+    "· %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %@"
+          }
+        }
+      }
+    },
+    "%.0f": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.0f"
+          }
+        }
+      }
+    },
+    "%.0f %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$.0f %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.0f %@"
+          }
+        }
+      }
+    },
+    "%.0f prog.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.0f forecast"
+          }
+        }
+      }
+    },
+    "%.0f Stk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.0f pcs"
+          }
+        }
+      }
+    },
+    "%.2f": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.2f"
+          }
+        }
+      }
+    },
+    "%.2f × %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$.2f × %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.2f × %@"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "%lld Varianten gesamt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld variants total"
+          }
+        }
+      }
+    },
+    "+%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld"
+          }
+        }
+      }
+    },
+    "Abbrechen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Abmelden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        }
+      }
+    },
+    "Aktionen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions"
+          }
+        }
+      }
+    },
+    "Aktiv": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        }
+      }
+    },
+    "Aktualisieren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Alles auf Lager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All in stock"
+          }
+        }
+      }
+    },
+    "Als versendet markieren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as shipped"
+          }
+        }
+      }
+    },
+    "Ändern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        }
+      }
+    },
+    "Angebote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quotes"
+          }
+        }
+      }
+    },
+    "Anzahl": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity"
+          }
+        }
+      }
+    },
+    "API-Keys erstellst du in Odoo unter Einstellungen → Benutzer → Konto-Sicherheit → API-Keys.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create API keys in Odoo under Settings → Users → Account Security → API Keys."
+          }
+        }
+      }
+    },
+    "App": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        }
+      }
+    },
+    "Artikelnummer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SKU"
+          }
+        }
+      }
+    },
+    "Backorder erforderlich": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backorder required"
+          }
+        }
+      }
+    },
+    "Barcode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barcode"
+          }
+        }
+      }
+    },
+    "Barcode scannen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan barcode"
+          }
+        }
+      }
+    },
+    "Bearbeiten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        }
+      }
+    },
+    "Benachrichtigungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "Benutzer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User"
+          }
+        }
+      }
+    },
+    "Beschreibung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        }
+      }
+    },
+    "Bestand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stock"
+          }
+        }
+      }
+    },
+    "Bestand anpassen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust stock"
+          }
+        }
+      }
+    },
+    "Bestätigte Bestellungen nach Rechnungsstatus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmed orders by invoice status"
+          }
+        }
+      }
+    },
+    "Bestätigung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmation"
+          }
+        }
+      }
+    },
+    "Bestellungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orders"
+          }
+        }
+      }
+    },
+    "Beträge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amounts"
+          }
+        }
+      }
+    },
+    "Browser-Login hat nicht zurück zur App geleitet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser sign-in did not redirect back to the app"
+          }
+        }
+      }
+    },
+    "Code im grünen Rahmen ausrichten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Align code inside the green frame"
+          }
+        }
+      }
+    },
+    "Das `odooconnect_bridge` Odoo-Modul ist auf deinem Server nicht installiert. Ohne dieses Modul gibt es keinen Endpoint, der einen API-Key generiert und zur App zurückleitet — du landest stattdessen im normalen Odoo Backend.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The `odooconnect_bridge` Odoo module is not installed on your server. Without it there is no endpoint that mints an API key and redirects back to the app — you end up in the normal Odoo backend instead."
+          }
+        }
+      }
+    },
+    "Dashboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dashboard"
+          }
+        }
+      }
+    },
+    "Datenbank": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database"
+          }
+        }
+      }
+    },
+    "Datum": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "Dein Odoo. In der Hand.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Odoo. In your hand."
+          }
+        }
+      }
+    },
+    "Einkaufbar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchasable"
+          }
+        }
+      }
+    },
+    "Einkaufspreis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase price"
+          }
+        }
+      }
+    },
+    "Einstellungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Entwurf bearbeiten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit draft"
+          }
+        }
+      }
+    },
+    "Erneut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        }
+      }
+    },
+    "Erscheint die Seite \"Erfolg / wirst zurückgeleitet\" - alles ok. Bei 404 fehlt das Modul.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you see the \"Success / redirecting\" page, everything is fine. A 404 means the module is missing."
+          }
+        }
+      }
+    },
+    "Fehler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Fehlgeschlagen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        }
+      }
+    },
+    "Fertig": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Filter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        }
+      }
+    },
+    "Firma": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        }
+      }
+    },
+    "Forecast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forecast"
+          }
+        }
+      }
+    },
+    "Funktioniert mit Passwort, Google, Microsoft — alles was dein Odoo unterstützt. Setzt das `odooconnect_bridge` Modul auf dem Server voraus.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Works with password, Google, Microsoft — anything your Odoo supports. Requires the `odooconnect_bridge` module on the server."
+          }
+        }
+      }
+    },
+    "Für die Lieferung **%@** wurden nicht alle Mengen vollständig versendet. Wie soll der Restbestand behandelt werden?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not all quantities for delivery **%@** were fully shipped. How should the remainder be handled?"
+          }
+        }
+      }
+    },
+    "Geplant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        }
+      }
+    },
+    "Gesamt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        }
+      }
+    },
+    "Hinweis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notice"
+          }
+        }
+      }
+    },
+    "https://mycompany.odoo.com": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://mycompany.odoo.com"
+          }
+        }
+      }
+    },
+    "Inventur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inventory"
+          }
+        }
+      }
+    },
+    "Jetzt synchronisieren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync now"
+          }
+        }
+      }
+    },
+    "Kategorie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        }
+      }
+    },
+    "Kein Bestand an internen Lagerorten. Bitte Standort zuerst in Odoo einrichten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stock at internal locations. Please set up a location in Odoo first."
+          }
+        }
+      }
+    },
+    "Kein verfügbarer Bestand auf internen Standorten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No available stock at internal locations."
+          }
+        }
+      }
+    },
+    "Keine Artikel unter der Schwelle.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No items below threshold."
+          }
+        }
+      }
+    },
+    "Keine Bestellungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No orders"
+          }
+        }
+      }
+    },
+    "Keine Lieferungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No deliveries"
+          }
+        }
+      }
+    },
+    "Keine Produkte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No products"
+          }
+        }
+      }
+    },
+    "Keine Treffer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matches"
+          }
+        }
+      }
+    },
+    "Keine Treffer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matches."
+          }
+        }
+      }
+    },
+    "Keine Verkäufe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No sales"
+          }
+        }
+      }
+    },
+    "Kopieren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
+    "Kritischer Bestand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low stock"
+          }
+        }
+      }
+    },
+    "Kunde": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer"
+          }
+        }
+      }
+    },
+    "Kunde oder Nummer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer or number"
+          }
+        }
+      }
+    },
+    "Kunden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customers"
+          }
+        }
+      }
+    },
+    "Lade...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        }
+      }
+    },
+    "Lagerbestand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stock level"
+          }
+        }
+      }
+    },
+    "Lagerort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        }
+      }
+    },
+    "Letzte Bestellungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent orders"
+          }
+        }
+      }
+    },
+    "Letzter Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last sync"
+          }
+        }
+      }
+    },
+    "Listenpreis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List price"
+          }
+        }
+      }
+    },
+    "Lokal gespeichert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stored locally"
+          }
+        }
+      }
+    },
+    "Lokale Entwürfe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local drafts"
+          }
+        }
+      }
+    },
+    "Löschen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Manuell mit API-Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual with API key"
+          }
+        }
+      }
+    },
+    "Meistverkauft im Zeitraum": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top sellers in period"
+          }
+        }
+      }
+    },
+    "Menge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity"
+          }
+        }
+      }
+    },
+    "Menge: %.2f": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity: %.2f"
+          }
+        }
+      }
+    },
+    "Min %.0f": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Min %.0f"
+          }
+        }
+      }
+    },
+    "Mit API-Key anmelden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with API key"
+          }
+        }
+      }
+    },
+    "Name oder Artikelnummer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name or SKU"
+          }
+        }
+      }
+    },
+    "Name, Artikelnr. oder Barcode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name, SKU or barcode"
+          }
+        }
+      }
+    },
+    "Name, Artikelnummer, Barcode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name, SKU, barcode"
+          }
+        }
+      }
+    },
+    "Name, E‑Mail, Stadt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name, email, city"
+          }
+        }
+      }
+    },
+    "Netto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Net"
+          }
+        }
+      }
+    },
+    "Neu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        }
+      }
+    },
+    "Neue Bestellungen melden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify on new orders"
+          }
+        }
+      }
+    },
+    "Neue Menge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New quantity"
+          }
+        }
+      }
+    },
+    "Neues Angebot": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New quote"
+          }
+        }
+      }
+    },
+    "Nicht gefunden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not found"
+          }
+        }
+      }
+    },
+    "Noch keine Bestellungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No orders yet"
+          }
+        }
+      }
+    },
+    "Nummer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number"
+          }
+        }
+      }
+    },
+    "Nummer, Quelle, Kunde": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number, source, customer"
+          }
+        }
+      }
+    },
+    "Odoo Server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odoo server"
+          }
+        }
+      }
+    },
+    "OdooCompanion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OdooCompanion"
+          }
+        }
+      }
+    },
+    "Offen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "Offline-Entwürfe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline drafts"
+          }
+        }
+      }
+    },
+    "Öffne in Safari (eingeloggt in Odoo): %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Safari (signed into Odoo): %@"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Positionen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lines"
+          }
+        }
+      }
+    },
+    "Preis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price"
+          }
+        }
+      }
+    },
+    "Preise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prices"
+          }
+        }
+      }
+    },
+    "Produkt hinzufügen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add product"
+          }
+        }
+      }
+    },
+    "Produkt suchen und Bestand anpassen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a product and adjust stock"
+          }
+        }
+      }
+    },
+    "Produktbild vergrößern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlarge product image"
+          }
+        }
+      }
+    },
+    "Produkte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Products"
+          }
+        }
+      }
+    },
+    "Quelle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        }
+      }
+    },
+    "Rechnungen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invoices"
+          }
+        }
+      }
+    },
+    "Rechnungspipeline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invoice pipeline"
+          }
+        }
+      }
+    },
+    "Scanner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanner"
+          }
+        }
+      }
+    },
+    "Server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server"
+          }
+        }
+      }
+    },
+    "Sichtbarkeit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visibility"
+          }
+        }
+      }
+    },
+    "Signiert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed"
+          }
+        }
+      }
+    },
+    "SKU-001": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SKU-001"
+          }
+        }
+      }
+    },
+    "Speichern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "Stammdaten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Master data"
+          }
+        }
+      }
+    },
+    "Standort suchen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search location"
+          }
+        }
+      }
+    },
+    "Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "Suchergebnisse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search results"
+          }
+        }
+      }
+    },
+    "Summe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        }
+      }
+    },
+    "Synchronisiert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced"
+          }
+        }
+      }
+    },
+    "t": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "t"
+          }
+        }
+      }
+    },
+    "Test:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test:"
+          }
+        }
+      }
+    },
+    "Top Produkte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top products"
+          }
+        }
+      }
+    },
+    "Tracking": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking"
+          }
+        }
+      }
+    },
+    "Über": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "Über Browser anmelden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in via browser"
+          }
+        }
+      }
+    },
+    "UID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UID"
+          }
+        }
+      }
+    },
+    "Umlagern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer"
+          }
+        }
+      }
+    },
+    "Umlagerung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer"
+          }
+        }
+      }
+    },
+    "Umlagerung ausführen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Execute transfer"
+          }
+        }
+      }
+    },
+    "Umsatz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenue"
+          }
+        }
+      }
+    },
+    "Unternehmen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        }
+      }
+    },
+    "Unterschreiben": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign"
+          }
+        }
+      }
+    },
+    "Unterschrift löschen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear signature"
+          }
+        }
+      }
+    },
+    "v": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v"
+          }
+        }
+      }
+    },
+    "Variante": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Variant"
+          }
+        }
+      }
+    },
+    "Verbindung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection"
+          }
+        }
+      }
+    },
+    "Verfügbar: %.0f": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available: %.0f"
+          }
+        }
+      }
+    },
+    "Vergleich:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compared to:"
+          }
+        }
+      }
+    },
+    "Verkauf, Lager, Lieferung & Inventur — direkt vom iPhone und iPad.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sales, stock, shipping & inventory — straight from iPhone and iPad."
+          }
+        }
+      }
+    },
+    "Verkaufbar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sellable"
+          }
+        }
+      }
+    },
+    "Verkäufe 30 Tage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sales (30 days)"
+          }
+        }
+      }
+    },
+    "Versand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shipping"
+          }
+        }
+      }
+    },
+    "Versender": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carrier"
+          }
+        }
+      }
+    },
+    "Versendet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shipped"
+          }
+        }
+      }
+    },
+    "Vorlage: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Template: %@"
+          }
+        }
+      }
+    },
+    "Wahrscheinlichste Ursache:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most likely cause:"
+          }
+        }
+      }
+    },
+    "Währung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currency"
+          }
+        }
+      }
+    },
+    "Wartet auf Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending sync"
+          }
+        }
+      }
+    },
+    "Wenn der Test funktioniert aber der App-Login trotzdem im /web hängenbleibt: prüfe Odoo Server Logs auf \"OdooConnect bridge minted API key\".": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the test works but app sign-in still gets stuck in /web: check the Odoo server logs for \"OdooConnect bridge minted API key\"."
+          }
+        }
+      }
+    },
+    "Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We wake the app in the background (~every 15 min) and check for newly confirmed orders."
+          }
+        }
+      }
+    },
+    "Zahlung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment"
+          }
+        }
+      }
+    },
+    "Zeit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        }
+      }
+    },
+    "Ziel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination"
+          }
+        }
+      }
+    },
+    "Zwischensumme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtotal"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
