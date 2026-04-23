@@ -122,9 +122,7 @@ struct InventoryAdjustmentSheet: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .alert("Fehler", isPresented: .constant(error != nil)) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
+        .errorAlert(error: $error)
     }
 
     private func loadQuants() async {

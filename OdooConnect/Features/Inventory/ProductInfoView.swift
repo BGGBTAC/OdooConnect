@@ -77,9 +77,7 @@ struct ProductInfoView: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .alert("Fehler", isPresented: .constant(error != nil)) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
+        .errorAlert(error: $error)
     }
 
     // MARK: - Cards
@@ -370,12 +368,7 @@ struct ProductInfoView: View {
         return LastSaleInfo(date: row.create_date, quantity: row.product_uom_qty)
     }
 
-    private func formatted(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        return rounded.truncatingRemainder(dividingBy: 1) == 0
-            ? String(format: "%.0f", rounded)
-            : String(format: "%.2f", rounded)
-    }
+    private func formatted(_ value: Double) -> String { value.qtyFormatted }
 }
 
 private struct LocationStockRow: Identifiable, Sendable, Equatable {

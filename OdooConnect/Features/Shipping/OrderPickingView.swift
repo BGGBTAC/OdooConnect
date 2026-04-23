@@ -71,7 +71,13 @@ struct OrderPickingView: View {
             }
             .presentationDetents([.height(220)])
         }
-        .alert("Hinweis", isPresented: .constant(commitMessage != nil)) {
+        .alert(
+            "Hinweis",
+            isPresented: Binding(
+                get: { commitMessage != nil },
+                set: { if !$0 { commitMessage = nil } }
+            )
+        ) {
             Button("OK") {
                 commitMessage = nil
                 Task {
@@ -80,9 +86,7 @@ struct OrderPickingView: View {
                 }
             }
         } message: { Text(commitMessage ?? "") }
-        .alert("Fehler", isPresented: .constant(model.error != nil)) {
-            Button("OK") { model.error = nil }
-        } message: { Text(model.error ?? "") }
+        .errorAlert(error: Bindable(model).error)
     }
 
     // MARK: - Header
@@ -232,12 +236,7 @@ struct OrderPickingView: View {
         }
     }
 
-    private func formatted(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        return rounded.truncatingRemainder(dividingBy: 1) == 0
-            ? String(format: "%.0f", rounded)
-            : String(format: "%.2f", rounded)
-    }
+    private func formatted(_ value: Double) -> String { value.qtyFormatted }
 }
 
 // MARK: - Row
@@ -302,12 +301,7 @@ private struct PickLineRow: View {
             .animation(.snappy, value: line.isComplete)
     }
 
-    private func formatted(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        return rounded.truncatingRemainder(dividingBy: 1) == 0
-            ? String(format: "%.0f", rounded)
-            : String(format: "%.2f", rounded)
-    }
+    private func formatted(_ value: Double) -> String { value.qtyFormatted }
 }
 
 // MARK: - Scan flash

@@ -86,11 +86,7 @@ struct DashboardView: View {
                 Task { await model.load(using: auth.client) }
             }
         }
-        .alert("Fehler", isPresented: .constant(model.error != nil)) {
-            Button("OK") { model.error = nil }
-        } message: {
-            Text(model.error ?? "")
-        }
+        .errorAlert(error: Bindable(model).error)
     }
 
     @ViewBuilder

@@ -77,11 +77,7 @@ struct OrderDetailView: View {
                 await uploadSignature(png)
             }
         }
-        .alert("Hinweis", isPresented: .constant(signatureMessage != nil)) {
-            Button("OK") { signatureMessage = nil }
-        } message: {
-            Text(signatureMessage ?? "")
-        }
+        .infoAlert(message: $signatureMessage)
     }
 
     private var code: String {

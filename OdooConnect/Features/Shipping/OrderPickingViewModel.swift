@@ -227,12 +227,7 @@ final class OrderPickingViewModel {
         }
     }
 
-    private func formatted(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        return rounded.truncatingRemainder(dividingBy: 1) == 0
-            ? String(format: "%.0f", rounded)
-            : String(format: "%.2f", rounded)
-    }
+    private func formatted(_ value: Double) -> String { value.qtyFormatted }
 }
 
 // MARK: - DTOs

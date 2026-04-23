@@ -150,12 +150,8 @@ struct InventoryView: View {
                 ProductInfoView()
             }
         }
-        .alert("Scanner", isPresented: .constant(scanError != nil)) {
-            Button("OK") { scanError = nil }
-        } message: { Text(scanError ?? "") }
-        .alert("Nicht gefunden", isPresented: .constant(lookupError != nil)) {
-            Button("OK") { lookupError = nil }
-        } message: { Text(lookupError ?? "") }
+        .errorAlert("Scanner", error: $scanError)
+        .errorAlert("Nicht gefunden", error: $lookupError)
     }
 
     private func loadLowStock() async {

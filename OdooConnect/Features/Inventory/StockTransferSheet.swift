@@ -117,10 +117,14 @@ struct StockTransferSheet: View {
             }
         }
         .task { await load() }
-        .alert("Fehler", isPresented: .constant(error != nil)) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
-        .alert("Hinweis", isPresented: .constant(info != nil)) {
+        .errorAlert(error: $error)
+        .alert(
+            "Hinweis",
+            isPresented: Binding(
+                get: { info != nil },
+                set: { if !$0 { info = nil } }
+            )
+        ) {
             Button("OK") { info = nil; dismiss() }
         } message: { Text(info ?? "") }
     }

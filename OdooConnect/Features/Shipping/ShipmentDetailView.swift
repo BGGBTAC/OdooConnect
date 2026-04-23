@@ -119,12 +119,8 @@ struct ShipmentDetailView: View {
         .task { await load() }
         .refreshable { await load() }
         .overlay { if isLoading && picking == nil { ProgressView() } }
-        .alert("Fehler", isPresented: .constant(error != nil)) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
-        .alert("Hinweis", isPresented: .constant(info != nil)) {
-            Button("OK") { info = nil }
-        } message: { Text(info ?? "") }
+        .errorAlert(error: $error)
+        .infoAlert(message: $info)
         .sheet(isPresented: $showingBackorderSheet) {
             if let picking {
                 BackorderConfirmationSheet(

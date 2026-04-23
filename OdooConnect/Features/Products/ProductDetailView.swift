@@ -80,9 +80,7 @@ struct ProductDetailView: View {
                 }
             }
         }
-        .alert("Fehler", isPresented: .constant(error != nil)) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
+        .errorAlert(error: $error)
     }
 
     private func header(_ product: ProductDetail) -> some View {
