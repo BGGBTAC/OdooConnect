@@ -1,7 +1,17 @@
 import SwiftUI
 
-/// Generic KPI card. Pass any `Text` (or other view) as the value so callers
-/// can apply `.contentTransition(.numericText)` where appropriate.
+/// KPI card used in the dashboard grid.
+///
+/// Layout is a deliberate three-row stack:
+///
+///     [icon] TITEL  (uppercase, tracked, single-line — always gets full width)
+///     1'234.56       (big rounded monospaced-digit value, scales down if needed)
+///     ↗ +12%         (compact delta pill, only when we have a comparison)
+///
+/// Early versions put the delta pill in the title row and forced the title
+/// into a narrow column, which caused iOS to hyphenate German words like
+/// "Bestellungen" into "Bestel-lungen". Giving title + value + delta each
+/// their own full-width row removes every width conflict.
 struct StatCard<Value: View>: View {
     let title: String
     let systemImage: String
@@ -24,50 +34,72 @@ struct StatCard<Value: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: systemImage).foregroundStyle(tint)
-                Text(title).font(.subheadline).foregroundStyle(.secondary)
-                Spacer()
-                if let delta {
-                    DeltaBadge(delta: delta)
-                }
-            }
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            titleRow
             value()
-                .font(.title2.bold())
+                .font(.system(.title2, design: .rounded, weight: .bold))
                 .monospacedDigit()
+                .foregroundStyle(.primary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let delta {
+                DeltaBadge(delta: delta)
+            }
         }
+        .padding(Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .glassEffect(.regular, in: .rect(cornerRadius: Radius.standard))
+    }
+
+    private var titleRow: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 14, alignment: .leading)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .kerning(0.4)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .truncationMode(.tail)
+            Spacer(minLength: 0)
+        }
     }
 }
 
+/// Compact delta pill. Integer-precision percent so it always fits
+/// on a single line inside a narrow KPI card (previously we rendered
+/// "-37.2%" which wrapped to "-37." / "2%" in a tall pill).
 struct DeltaBadge: View {
     let delta: StatDelta
 
     var body: some View {
-        let ratio = delta.ratio
-        HStack(spacing: 2) {
+        HStack(spacing: 3) {
             Image(systemName: delta.isPositive ? "arrow.up.right" : "arrow.down.right")
                 .contentTransition(.symbolEffect(.replace))
-            if let ratio {
-                Text(ratio, format: .percent.precision(.fractionLength(0...1)))
+            if let ratio = delta.ratio {
+                Text(ratio, format: .percent.precision(.fractionLength(0)))
+                    .monospacedDigit()
                     .contentTransition(.numericText(value: ratio))
             } else {
                 Text("—")
             }
         }
-        .font(.caption.weight(.semibold))
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .foregroundStyle(delta.isPositive ? .green : .red)
-        .background(
-            (delta.isPositive ? Color.green : Color.red).opacity(0.15),
-            in: Capsule()
-        )
+        .font(.caption2.weight(.bold))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(tint.opacity(0.15), in: .capsule)
+        .overlay(Capsule().stroke(tint.opacity(0.25), lineWidth: 0.5))
+        .fixedSize(horizontal: true, vertical: false)
         .animation(.snappy, value: delta.isPositive)
+    }
+
+    private var tint: Color {
+        delta.isPositive ? Theme.success : Theme.danger
     }
 }

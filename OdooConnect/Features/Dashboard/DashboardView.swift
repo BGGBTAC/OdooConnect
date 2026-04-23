@@ -22,6 +22,8 @@ struct DashboardView: View {
                     series: model.revenueSeries
                 )
 
+                sectionLabel("Performance")
+
                 kpiGrid
 
                 if !model.revenueSeries.isEmpty {
@@ -34,10 +36,14 @@ struct DashboardView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
 
+                sectionLabel("Verkauf & Pipeline")
+
                 adaptivePair(
                     TopProductsCard(products: model.topProducts, currencyCode: code),
                     OrderFunnelCard(buckets: model.invoicePipeline)
                 )
+
+                sectionLabel("Bestand & Aktivität")
 
                 adaptivePair(
                     LowStockCard(rows: model.lowStock) { row in
@@ -112,7 +118,10 @@ struct DashboardView: View {
     /// 4 KPIs in a 2-column grid. Colors are *semantic* (success / warning /
     /// danger / info) rather than one hue per card — see Theme.swift.
     private var kpiGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: Spacing.md)], spacing: Spacing.md) {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 150), spacing: Spacing.md)],
+            spacing: Spacing.md
+        ) {
             StatCard(title: "Bestellungen",
                      systemImage: "cart.fill",
                      tint: Theme.success,
@@ -120,7 +129,7 @@ struct DashboardView: View {
                 Text("\(Int(model.kpis.orderCount.current))")
                     .contentTransition(.numericText(value: model.kpis.orderCount.current))
             }
-            StatCard(title: "Ø Warenkorb",
+            StatCard(title: "Ø Bestellwert",
                      systemImage: "basket.fill",
                      tint: Theme.info,
                      delta: model.kpis.averageOrderValue) {
@@ -140,13 +149,13 @@ struct DashboardView: View {
                 Text(model.kpis.cancelRate, format: .percent.precision(.fractionLength(0...1)))
                     .contentTransition(.numericText(value: model.kpis.cancelRate))
             }
-            StatCard(title: "Offene Angebote",
+            StatCard(title: "Angebote offen",
                      systemImage: "doc.text",
                      tint: Theme.slate) {
                 Text("\(model.kpis.openQuotes)")
                     .contentTransition(.numericText(value: Double(model.kpis.openQuotes)))
             }
-            StatCard(title: "Offene Lieferungen",
+            StatCard(title: "Lieferungen offen",
                      systemImage: "shippingbox.fill",
                      tint: Theme.warning) {
                 if let value = model.kpis.pendingDeliveries {
@@ -166,13 +175,30 @@ struct DashboardView: View {
                     Text("—").foregroundStyle(.tertiary)
                 }
             }
-            StatCard(title: "Offene Forderungen",
+            StatCard(title: "Forderungen",
                      systemImage: "creditcard.fill",
                      tint: model.kpis.outstandingReceivable > 0 ? Theme.danger : Theme.slate) {
                 Text(model.kpis.outstandingReceivable, format: .currency(code: code))
                     .contentTransition(.numericText(value: model.kpis.outstandingReceivable))
             }
         }
+    }
+
+    /// Thin editorial section divider — subtle rounded uppercase label
+    /// with a hairline. Breaks the dashboard into scannable groups
+    /// instead of one endless vertical stream of cards.
+    private func sectionLabel(_ title: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .kerning(0.5)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+            Rectangle()
+                .fill(.secondary.opacity(0.2))
+                .frame(height: 1)
+        }
+        .padding(.top, Spacing.xs)
     }
 
     @ViewBuilder
