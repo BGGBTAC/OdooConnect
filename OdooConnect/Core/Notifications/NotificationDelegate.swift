@@ -31,8 +31,10 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         // the same destination — anything other than dismiss should land
         // on the order.
         guard action != UNNotificationDismissActionIdentifier else { return }
-        await MainActor.run { [weak self] in
-            self?.router?.openOrder(id: orderId)
-        }
+        await openOrder(id: orderId)
+    }
+
+    private func openOrder(id: Int) {
+        router?.openOrder(id: id)
     }
 }

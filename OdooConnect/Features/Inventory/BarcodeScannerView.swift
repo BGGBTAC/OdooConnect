@@ -109,7 +109,11 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             if !session.isRunning {
-                DispatchQueue.global(qos: .userInitiated).async { [session] in
+                // startRunning() blocks for ~1–2s while the camera warms up,
+                // so it must run off the main actor. Detached because we
+                // don't want to inherit MainActor isolation here.
+                let session = self.session
+                Task.detached(priority: .userInitiated) {
                     session.startRunning()
                 }
             }

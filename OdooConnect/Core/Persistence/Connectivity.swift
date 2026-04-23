@@ -9,6 +9,9 @@ import Network
 /// violate Swift 6 actor isolation.
 actor Connectivity {
     private let monitor = NWPathMonitor()
+    // NWPathMonitor.start(queue:) requires a DispatchQueue — there is no
+    // Swift Concurrency-native API for it. Path updates hop back into the
+    // actor via `Task { await self.publish(_:) }` in pathUpdateHandler.
     private let queue = DispatchQueue(label: "com.odooconnect.connectivity")
     private var continuations: [UUID: AsyncStream<Bool>.Continuation] = [:]
     private var monitorRunning = false

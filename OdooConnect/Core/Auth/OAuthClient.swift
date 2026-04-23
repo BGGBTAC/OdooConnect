@@ -1,5 +1,6 @@
 import Foundation
 import AuthenticationServices
+import Synchronization
 import UIKit
 
 /// Drives the browser-based sign-in flow against Odoo. Opens
@@ -135,20 +136,18 @@ enum OAuthError: LocalizedError {
 /// presentation. We grab the current key window from the active scene.
 /// Tiny mutex around a "did we already resume this continuation" flag.
 /// Lives outside the `@MainActor` actor isolation so the iOS-internal
-/// completion handler thread can hit it safely.
-private final class SingleResume: @unchecked Sendable {
-    private let lock = NSLock()
-    private var done = false
+/// completion handler thread can hit it safely. `Mutex` lets the
+/// compiler prove `Sendable` correctness without `@unchecked`.
+private final class SingleResume: Sendable {
+    private let done = Mutex<Bool>(false)
 
     func resume(_ work: () -> Void) {
-        lock.lock()
-        if done {
-            lock.unlock()
-            return
+        let shouldRun = done.withLock { state in
+            guard !state else { return false }
+            state = true
+            return true
         }
-        done = true
-        lock.unlock()
-        work()
+        if shouldRun { work() }
     }
 }
 
