@@ -122,6 +122,10 @@ final class AuthManager {
             )
             if let currency = currencies.first {
                 self.companyCurrency = currency
+                // Out-of-process App Intents (Siri, CarPlay, Spotlight)
+                // can't read MainActor-isolated state — cache here so
+                // they can format amounts in the right currency.
+                IntentSession.cacheCurrencyCode(currency.code)
             }
         } catch {
             // Non-fatal — fall back to EUR until the next refresh succeeds.
