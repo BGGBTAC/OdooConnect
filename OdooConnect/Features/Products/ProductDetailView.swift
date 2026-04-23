@@ -18,13 +18,15 @@ struct ProductDetailView: View {
     var body: some View {
         ScrollView {
             if let product {
-                VStack(alignment: .leading, spacing: 16) {
-                    header(product)
-                    if !variantAttributes.isEmpty {
-                        variantCard(product)
+                GlassEffectContainer(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        header(product)
+                        if !variantAttributes.isEmpty {
+                            variantCard(product)
+                        }
+                        stockCard(product)
+                        salesCard
                     }
-                    stockCard(product)
-                    salesCard
                 }
                 .padding()
             }

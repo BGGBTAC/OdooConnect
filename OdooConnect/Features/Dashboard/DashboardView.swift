@@ -9,54 +9,59 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.lg) {
-                PeriodPickerPills(selection: Binding(
-                    get: { model.period },
-                    set: { model.period = $0 }
-                ))
-                .padding(.top, Spacing.xs)
+            // GlassEffectContainer lets the sibling glass cards share
+            // rendering and blend smoothly when they animate in/out
+            // (rather than each computing its own backdrop in isolation).
+            GlassEffectContainer(spacing: Spacing.lg) {
+                VStack(spacing: Spacing.lg) {
+                    PeriodPickerPills(selection: Binding(
+                        get: { model.period },
+                        set: { model.period = $0 }
+                    ))
+                    .padding(.top, Spacing.xs)
 
-                RevenueHeroCard(
-                    revenue: model.kpis.revenue,
-                    currencyCode: code,
-                    series: model.revenueSeries
-                )
-
-                sectionLabel("Performance")
-
-                kpiGrid
-
-                if !model.revenueSeries.isEmpty {
-                    RevenueChartCard(
-                        title: revenueTitle,
-                        points: model.revenueSeries,
+                    RevenueHeroCard(
+                        revenue: model.kpis.revenue,
                         currencyCode: code,
-                        interval: model.period.seriesInterval
+                        series: model.revenueSeries
                     )
-                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                }
 
-                sectionLabel("Verkauf & Pipeline")
+                    sectionLabel("Performance")
 
-                adaptivePair(
-                    TopProductsCard(products: model.topProducts, currencyCode: code),
-                    OrderFunnelCard(buckets: model.invoicePipeline)
-                )
+                    kpiGrid
 
-                sectionLabel("Bestand & Aktivität")
-
-                adaptivePair(
-                    LowStockCard(rows: model.lowStock) { row in
-                        router.openProduct(id: row.productId)
-                    },
-                    RecentOrdersCard(orders: model.recentOrders, currencyCode: code) { order in
-                        router.selectedTab = .orders
-                        router.ordersPath.append(AppRouter.OrderRoute.detail(order.id))
+                    if !model.revenueSeries.isEmpty {
+                        RevenueChartCard(
+                            title: revenueTitle,
+                            points: model.revenueSeries,
+                            currencyCode: code,
+                            interval: model.period.seriesInterval
+                        )
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
-                )
+
+                    sectionLabel("Verkauf & Pipeline")
+
+                    adaptivePair(
+                        TopProductsCard(products: model.topProducts, currencyCode: code),
+                        OrderFunnelCard(buckets: model.invoicePipeline)
+                    )
+
+                    sectionLabel("Bestand & Aktivität")
+
+                    adaptivePair(
+                        LowStockCard(rows: model.lowStock) { row in
+                            router.openProduct(id: row.productId)
+                        },
+                        RecentOrdersCard(orders: model.recentOrders, currencyCode: code) { order in
+                            router.selectedTab = .orders
+                            router.ordersPath.append(AppRouter.OrderRoute.detail(order.id))
+                        }
+                    )
+                }
+                .animation(.spring(duration: 0.4, bounce: 0.18), value: model.kpis)
+                .animation(.smooth(duration: 0.45), value: model.revenueSeries.count)
             }
-            .animation(.spring(duration: 0.4, bounce: 0.18), value: model.kpis)
-            .animation(.smooth(duration: 0.45), value: model.revenueSeries.count)
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.lg)
         }
