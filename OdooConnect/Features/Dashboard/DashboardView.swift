@@ -4,6 +4,7 @@ struct DashboardView: View {
     @Environment(AuthManager.self) private var auth
     @Environment(AppRouter.self) private var router
     @Environment(\.horizontalSizeClass) private var hSize
+    @Environment(\.scenePhase) private var scenePhase
     @State private var model = DashboardViewModel()
 
     var body: some View {
@@ -64,6 +65,21 @@ struct DashboardView: View {
         }
         .refreshable { await model.load(using: auth.client) }
         .task { await model.load(using: auth.client) }
+        .onAppear {
+            // Tab-switch / NavigationStack pop reattaches the view but
+            // doesn't re-fire .task. Reload if the data is older than
+            // 30 s so coming back to the Dashboard always shows fresh
+            // numbers without forcing a manual pull-to-refresh.
+            let stale = model.lastRefresh.map { Date().timeIntervalSince($0) > 30 } ?? true
+            if stale {
+                Task { await model.load(using: auth.client) }
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await model.load(using: auth.client) }
+            }
+        }
         .alert("Fehler", isPresented: .constant(model.error != nil)) {
             Button("OK") { model.error = nil }
         } message: {

@@ -25,7 +25,11 @@ final class DashboardViewModel {
     private var client: OdooClient?
 
     func load(using client: OdooClient?) async {
-        self.client = client
+        // Don't clobber a previously valid client with nil — when the
+        // Dashboard is rebuilt before AuthManager has fully restored
+        // (race between SwiftUI tree settling and Keychain restore),
+        // `auth.client` can be nil for a tick. Keep what we have.
+        if let client { self.client = client }
         await loadPeriod()
     }
 

@@ -132,7 +132,13 @@
     "Beträge" : {
 
     },
+    "Browser-Login hat nicht zurück zur App geleitet" : {
+
+    },
     "Code im grünen Rahmen ausrichten" : {
+
+    },
+    "Das `odooconnect_bridge` Odoo-Modul ist auf deinem Server nicht installiert. Ohne dieses Modul gibt es keinen Endpoint, der einen API-Key generiert und zur App zurückleitet — du landest stattdessen im normalen Odoo Backend." : {
 
     },
     "Dashboard" : {
@@ -160,6 +166,9 @@
 
     },
     "Erneut" : {
+
+    },
+    "Erscheint die Seite \"Erfolg / wirst zurückgeleitet\" - alles ok. Bei 404 fehlt das Modul." : {
 
     },
     "Fehler" : {
@@ -345,6 +354,9 @@
     "Offline-Entwürfe" : {
 
     },
+    "Öffne in Safari (eingeloggt in Odoo): %@" : {
+
+    },
     "OK" : {
 
     },
@@ -415,6 +427,9 @@
 
     },
     "t" : {
+
+    },
+    "Test:" : {
 
     },
     "Top Produkte" : {
@@ -489,10 +504,16 @@
     "Vorlage: %@" : {
 
     },
+    "Wahrscheinlichste Ursache:" : {
+
+    },
     "Währung" : {
 
     },
     "Wartet auf Sync" : {
+
+    },
+    "Wenn der Test funktioniert aber der App-Login trotzdem im /web hängenbleibt: prüfe Odoo Server Logs auf \"OdooConnect bridge minted API key\"." : {
 
     },
     "Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen." : {

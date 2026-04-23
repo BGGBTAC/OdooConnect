@@ -22,17 +22,27 @@ final class OAuthClient {
     func signIn(serverURL: URL) async throws -> OAuthResult {
         let authURL = Self.buildAuthURL(serverURL: serverURL)
 
+        // ASWebAuthenticationSession on iOS 26 sometimes fires the
+        // completion handler twice (once on URL intercept, once on the
+        // session's own dismissal), and `session.start()` returning
+        // `false` after a queued completion handler can race the same
+        // way. Wrap the resume in an idempotency guard so a second
+        // call is a no-op instead of crashing CheckedContinuation.
+        let single = SingleResume()
+
         let callbackURL: URL = try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(
                 url: authURL,
                 callbackURLScheme: Self.callbackScheme
             ) { url, error in
-                if let error {
-                    continuation.resume(throwing: Self.translate(error))
-                } else if let url {
-                    continuation.resume(returning: url)
-                } else {
-                    continuation.resume(throwing: OAuthError.cancelled)
+                single.resume {
+                    if let error {
+                        continuation.resume(throwing: Self.translate(error))
+                    } else if let url {
+                        continuation.resume(returning: url)
+                    } else {
+                        continuation.resume(throwing: OAuthError.cancelled)
+                    }
                 }
             }
             session.presentationContextProvider = presentationProvider
@@ -40,7 +50,9 @@ final class OAuthClient {
             // the OAuth session here is single-purpose.
             session.prefersEphemeralWebBrowserSession = true
             if !session.start() {
-                continuation.resume(throwing: OAuthError.failedToStart)
+                single.resume {
+                    continuation.resume(throwing: OAuthError.failedToStart)
+                }
             }
         }
 
@@ -121,6 +133,25 @@ enum OAuthError: LocalizedError {
 
 /// `ASWebAuthenticationSession` needs a `UIWindow` to anchor its
 /// presentation. We grab the current key window from the active scene.
+/// Tiny mutex around a "did we already resume this continuation" flag.
+/// Lives outside the `@MainActor` actor isolation so the iOS-internal
+/// completion handler thread can hit it safely.
+private final class SingleResume: @unchecked Sendable {
+    private let lock = NSLock()
+    private var done = false
+
+    func resume(_ work: () -> Void) {
+        lock.lock()
+        if done {
+            lock.unlock()
+            return
+        }
+        done = true
+        lock.unlock()
+        work()
+    }
+}
+
 @MainActor
 private final class OAuthPresentationProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
     nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
