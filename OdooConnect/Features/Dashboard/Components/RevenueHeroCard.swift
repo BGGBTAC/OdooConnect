@@ -67,8 +67,8 @@ struct RevenueHeroCard: View {
     private var sparkline: some View {
         Chart(series) { point in
             AreaMark(
-                x: .value("t", point.bucketStart),
-                y: .value("v", point.total)
+                x: .value("Zeit", point.bucketStart),
+                y: .value("Umsatz", point.total)
             )
             .interpolationMethod(.monotone)
             .foregroundStyle(
@@ -78,8 +78,8 @@ struct RevenueHeroCard: View {
                 )
             )
             LineMark(
-                x: .value("t", point.bucketStart),
-                y: .value("v", point.total)
+                x: .value("Zeit", point.bucketStart),
+                y: .value("Umsatz", point.total)
             )
             .interpolationMethod(.monotone)
             .foregroundStyle(Theme.brand)
@@ -88,6 +88,9 @@ struct RevenueHeroCard: View {
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartPlotStyle { $0.background(Color.clear) }
+        // The hero number above already speaks the value to VoiceOver —
+        // a duplicate sparkline announcement would just be noise.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
