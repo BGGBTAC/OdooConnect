@@ -11,9 +11,13 @@ import UserNotifications
 @MainActor
 final class OrderWatcher {
     static let backgroundTaskIdentifier = "com.benedict.odooconnect.refresh"
+    static let categoryIdentifier = "NEW_ORDER_CATEGORY"
+    static let openActionIdentifier = "NEW_ORDER_OPEN"
+    static let threadIdentifier = "new-orders"
 
     private weak var auth: AuthManager?
     private let lastSeenKey = "orderWatcher.lastSeenId"
+    private let unreadCountKey = "orderWatcher.unreadCount"
 
     var notificationsEnabled: Bool {
         UserDefaults.standard.bool(forKey: "orderWatcher.enabled")
@@ -21,6 +25,7 @@ final class OrderWatcher {
 
     init(auth: AuthManager) {
         self.auth = auth
+        Self.registerCategories()
     }
 
     /// Asks for permission and persists the user's choice. Safe to call on
@@ -37,9 +42,54 @@ final class OrderWatcher {
         }
     }
 
+    /// True only if the user has explicitly denied — the toggle should
+    /// then point at iOS Settings instead of re-prompting (which iOS
+    /// silently ignores after the first denial).
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
     func disable() {
         UserDefaults.standard.set(false, forKey: "orderWatcher.enabled")
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.backgroundTaskIdentifier)
+    }
+
+    /// Called when the user opens the Orders tab — clears the badge and
+    /// the queued group of new-order notifications so the next batch
+    /// summary starts at 0.
+    func clearUnread() {
+        UserDefaults.standard.set(0, forKey: unreadCountKey)
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(0)
+            UNUserNotificationCenter.current()
+                .removeDeliveredNotifications(withIdentifiers: [])
+            // Cheaper than enumerating: drop the whole group by thread.
+            let center = UNUserNotificationCenter.current()
+            let delivered = await center.deliveredNotifications()
+            let ids = delivered
+                .filter { $0.request.content.threadIdentifier == Self.threadIdentifier }
+                .map(\.request.identifier)
+            if !ids.isEmpty {
+                center.removeDeliveredNotifications(withIdentifiers: ids)
+            }
+        }
+    }
+
+    private static func registerCategories() {
+        let open = UNNotificationAction(
+            identifier: Self.openActionIdentifier,
+            title: "Öffnen",
+            options: [.foreground]
+        )
+        let category = UNNotificationCategory(
+            identifier: Self.categoryIdentifier,
+            actions: [open],
+            intentIdentifiers: [],
+            hiddenPreviewsBodyPlaceholder: "Neue Bestellung",
+            categorySummaryFormat: "%u weitere Bestellungen",
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
     /// Hook called from the BG task handler — performs one polling cycle.
@@ -82,10 +132,20 @@ final class OrderWatcher {
     }
 
     private func postNotification(for order: SaleOrder) async {
+        let nextBadge = UserDefaults.standard.integer(forKey: unreadCountKey) + 1
+        UserDefaults.standard.set(nextBadge, forKey: unreadCountKey)
+
         let content = UNMutableNotificationContent()
-        content.title = "Neue Bestellung"
-        content.body = "\(order.name) – \(order.partner_id.name)"
+        content.title = order.partner_id.name.isEmpty ? "Neue Bestellung" : order.partner_id.name
+        content.subtitle = order.name
+        let formatted = order.amount_total.formatted(
+            .currency(code: IntentSession.cachedCurrencyCode)
+        )
+        content.body = "Neue Bestellung – \(formatted)"
         content.sound = .default
+        content.badge = NSNumber(value: nextBadge)
+        content.threadIdentifier = Self.threadIdentifier
+        content.categoryIdentifier = Self.categoryIdentifier
         content.userInfo = ["orderId": order.id]
         let request = UNNotificationRequest(
             identifier: "order.\(order.id)",

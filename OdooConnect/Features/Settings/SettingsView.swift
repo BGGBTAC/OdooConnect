@@ -1,13 +1,17 @@
 import SwiftUI
 import SwiftData
+import UIKit
+import UserNotifications
 
 struct SettingsView: View {
     @Environment(AuthManager.self) private var auth
     @Environment(DraftSync.self) private var draftSync
     @Environment(OrderWatcher.self) private var orderWatcher
+    @Environment(\.openURL) private var openURL
     @Query(sort: \DraftQuote.createdAt, order: .reverse) private var drafts: [DraftQuote]
 
     @State private var notificationsOn: Bool = false
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
         Form {
@@ -44,20 +48,37 @@ struct SettingsView: View {
                     .disabled(draftSync.isSyncing || drafts.isEmpty)
                 }
                 Section("Benachrichtigungen") {
-                    Toggle("Neue Bestellungen melden", isOn: $notificationsOn)
-                        .onChange(of: notificationsOn) { _, newValue in
-                            Task {
-                                if newValue {
-                                    let granted = await orderWatcher.requestAuthorization()
-                                    if !granted { notificationsOn = false }
-                                } else {
-                                    orderWatcher.disable()
+                    if notificationStatus == .denied {
+                        // iOS silently swallows further requestAuthorization
+                        // calls once the user has denied — only the system
+                        // Settings app can reverse it.
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        } label: {
+                            Label("In den Einstellungen aktivieren", systemImage: "gear")
+                        }
+                        Text("Du hast Benachrichtigungen für OdooCompanion deaktiviert. Aktiviere sie in den iOS-Einstellungen, um neue Bestellungen zu erhalten.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle("Neue Bestellungen melden", isOn: $notificationsOn)
+                            .onChange(of: notificationsOn) { _, newValue in
+                                Task {
+                                    if newValue {
+                                        let granted = await orderWatcher.requestAuthorization()
+                                        if !granted { notificationsOn = false }
+                                        notificationStatus = await orderWatcher.authorizationStatus()
+                                    } else {
+                                        orderWatcher.disable()
+                                    }
                                 }
                             }
-                        }
-                    Text("Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        Text("Wir wecken die App im Hintergrund (~alle 15 Min) und prüfen, ob neue bestätigte Aufträge vorliegen.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             Section {
@@ -69,6 +90,9 @@ struct SettingsView: View {
         }
         .navigationTitle("Einstellungen")
         .onAppear { notificationsOn = orderWatcher.notificationsEnabled }
+        .task {
+            notificationStatus = await orderWatcher.authorizationStatus()
+        }
     }
 
     private var currencyLabel: String {

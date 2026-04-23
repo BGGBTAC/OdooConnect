@@ -25,7 +25,12 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse
     ) async {
         let info = response.notification.request.content.userInfo
+        let action = response.actionIdentifier
         guard let orderId = info["orderId"] as? Int else { return }
+        // Both the default tap and the custom "Öffnen" action route to
+        // the same destination — anything other than dismiss should land
+        // on the order.
+        guard action != UNNotificationDismissActionIdentifier else { return }
         await MainActor.run { [weak self] in
             self?.router?.openOrder(id: orderId)
         }

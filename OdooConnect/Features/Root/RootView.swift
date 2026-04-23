@@ -15,6 +15,7 @@ struct RootView: View {
 
 private struct MainTabs: View {
     @Environment(AppRouter.self) private var routerEnv
+    @Environment(OrderWatcher.self) private var orderWatcher
 
     var body: some View {
         @Bindable var router = routerEnv
@@ -46,5 +47,8 @@ private struct MainTabs: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .tint(Theme.brand)
+        .onChange(of: router.selectedTab) { _, tab in
+            if tab == .orders { orderWatcher.clearUnread() }
+        }
     }
 }
