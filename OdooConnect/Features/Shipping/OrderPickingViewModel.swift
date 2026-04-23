@@ -1,11 +1,14 @@
 import Foundation
 import Observation
 
-/// One pickable line shown in the picking UI. Combines stock.move.line
-/// data with display info (image / variant) so the camera overlay can
-/// show "Red T-Shirt L · 1/2" while the user scans.
+/// One pickable line shown in the picking UI. Backed by a `stock.move`
+/// (one record per product line) — `stock.move.line` would split per
+/// reservation/lot/bin, which is not what the user thinks of as "a line
+/// in this delivery". Combines move data with display info (image /
+/// variant) so the camera overlay can show "Red T-Shirt L · 1/2" while
+/// the user scans.
 struct PickableLine: Identifiable, Sendable, Equatable {
-    let moveLineId: Int
+    let moveId: Int
     let productId: Int
     let displayName: String
     let barcode: String?
@@ -14,7 +17,7 @@ struct PickableLine: Identifiable, Sendable, Equatable {
     var picked: Double
     let uomName: String
 
-    var id: Int { moveLineId }
+    var id: Int { moveId }
     var remaining: Double { max(0, demand - picked) }
     var isComplete: Bool { picked >= demand }
     var progress: Double { demand > 0 ? min(1, picked / demand) : 0 }
@@ -70,11 +73,16 @@ final class OrderPickingViewModel {
             )
             currentCarrier = pickings.first?.carrier_id
 
-            // 2. Fetch the move lines + their products in one batch.
-            let raw: [PickingLineDTO] = try await client.searchRead(
-                model: "stock.move.line",
-                domain: [.array([.string("picking_id"), .string("="), .int(pickingId)])],
-                fields: PickingLineDTO.fields,
+            // 2. Fetch the moves + their products in one batch. Filter out
+            // cancelled moves so the user doesn't see ghost lines for
+            // products that were removed from the order.
+            let raw: [PickingMoveDTO] = try await client.searchRead(
+                model: "stock.move",
+                domain: [
+                    .array([.string("picking_id"), .string("="), .int(pickingId)]),
+                    .array([.string("state"), .string("!="), .string("cancel")])
+                ],
+                fields: PickingMoveDTO.fields,
                 limit: 500,
                 order: "id asc"
             )
@@ -92,14 +100,14 @@ final class OrderPickingViewModel {
             lines = raw.map { dto in
                 let p = productById[dto.product_id.id]
                 return PickableLine(
-                    moveLineId: dto.id,
+                    moveId: dto.id,
                     productId: dto.product_id.id,
                     displayName: p?.display_name ?? dto.product_id.name,
                     barcode: p?.barcode,
                     defaultCode: p?.default_code,
-                    demand: dto.reserved_uom_qty ?? dto.quantity_demand ?? dto.quantity ?? 0,
-                    picked: dto.quantity ?? dto.qty_done ?? 0,
-                    uomName: dto.product_uom_id?.name ?? "Stk"
+                    demand: dto.product_uom_qty,
+                    picked: dto.quantity ?? 0,
+                    uomName: dto.product_uom?.name ?? "Stk"
                 )
             }
         } catch {
@@ -159,7 +167,7 @@ final class OrderPickingViewModel {
 
     /// Manual override for a row (typed quantity). Clamps to demand.
     func setQuantity(_ qty: Double, for lineId: Int) {
-        guard let idx = lines.firstIndex(where: { $0.moveLineId == lineId }) else { return }
+        guard let idx = lines.firstIndex(where: { $0.moveId == lineId }) else { return }
         lines[idx].picked = max(0, min(qty, lines[idx].demand))
     }
 
@@ -177,24 +185,14 @@ final class OrderPickingViewModel {
         isCommitting = true
         defer { isCommitting = false }
         do {
-            // 1. Persist quantities for each move line. Try the modern
-            // `quantity` field first; fall back to `qty_done` for older
-            // Odoo if the write rejects.
+            // 1. Persist quantities on each `stock.move`. Odoo's ORM
+            // splits the value back across the underlying move-lines.
             for line in lines {
-                let value: JSON = .double(line.picked)
-                do {
-                    _ = try await client.write(
-                        model: "stock.move.line",
-                        ids: [line.moveLineId],
-                        values: ["quantity": value]
-                    )
-                } catch {
-                    _ = try await client.write(
-                        model: "stock.move.line",
-                        ids: [line.moveLineId],
-                        values: ["qty_done": value]
-                    )
-                }
+                _ = try await client.write(
+                    model: "stock.move",
+                    ids: [line.moveId],
+                    values: ["quantity": .double(line.picked)]
+                )
             }
 
             // 2. Update carrier if changed.
@@ -232,33 +230,28 @@ final class OrderPickingViewModel {
 
 // MARK: - DTOs
 
-private struct PickingLineDTO: Decodable, Sendable {
+private struct PickingMoveDTO: Decodable, Sendable {
     let id: Int
     let product_id: Many2One
-    let product_uom_id: Many2One?
-    let quantity: Double?            // Odoo 18+: qty done
-    let qty_done: Double?            // Odoo ≤17: qty done
-    let reserved_uom_qty: Double?    // Odoo ≤17 demand
-    let quantity_demand: Double?     // Odoo 18+ demand alias
+    let product_uom: Many2One?
+    let product_uom_qty: Double      // demand (stable across all Odoo versions)
+    let quantity: Double?            // Odoo 17+: done qty (computed + writable)
 
     static let fields: [String] = [
-        "id", "product_id", "product_uom_id",
-        "quantity", "qty_done", "reserved_uom_qty"
+        "id", "product_id", "product_uom", "product_uom_qty", "quantity"
     ]
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         product_id = try c.decode(Many2One.self, forKey: .product_id)
-        product_uom_id = try? c.decode(Many2One.self, forKey: .product_uom_id)
+        product_uom = try? c.decode(Many2One.self, forKey: .product_uom)
+        product_uom_qty = try c.decodeIfPresent(Double.self, forKey: .product_uom_qty) ?? 0
         quantity = try c.decodeIfPresent(Double.self, forKey: .quantity)
-        qty_done = try c.decodeIfPresent(Double.self, forKey: .qty_done)
-        reserved_uom_qty = try c.decodeIfPresent(Double.self, forKey: .reserved_uom_qty)
-        quantity_demand = nil
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, product_id, product_uom_id, quantity, qty_done, reserved_uom_qty
+        case id, product_id, product_uom, product_uom_qty, quantity
     }
 }
 

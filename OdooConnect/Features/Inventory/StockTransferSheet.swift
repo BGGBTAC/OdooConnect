@@ -257,21 +257,11 @@ struct StockTransferSheet: View {
         )
         let ids = lines.map { $0.id }
         guard !ids.isEmpty else { return }
-        // Try the new field first, fall back to the legacy one for older
-        // Odoo installs that still expose qty_done.
-        do {
-            _ = try await client.write(
-                model: "stock.move.line",
-                ids: ids,
-                values: ["quantity": .double(quantity)]
-            )
-        } catch {
-            _ = try? await client.write(
-                model: "stock.move.line",
-                ids: ids,
-                values: ["qty_done": .double(quantity)]
-            )
-        }
+        _ = try await client.write(
+            model: "stock.move.line",
+            ids: ids,
+            values: ["quantity": .double(quantity)]
+        )
     }
 }
 

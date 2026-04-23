@@ -70,11 +70,12 @@ struct StockMoveLine: Identifiable, Sendable, Hashable, Decodable {
     let id: Int
     let product_id: Many2One
     let quantity: Double
-    let qty_done: Double?
     let product_uom_id: Many2One?
 
+    // Odoo 17+ removed `qty_done`; the field on `stock.move.line` is
+    // simply `quantity`. We target Odoo 19 so the legacy fallback is dead.
     static let fields: [String] = [
-        "id", "product_id", "quantity", "qty_done", "product_uom_id"
+        "id", "product_id", "quantity", "product_uom_id"
     ]
 
     init(from decoder: Decoder) throws {
@@ -82,11 +83,10 @@ struct StockMoveLine: Identifiable, Sendable, Hashable, Decodable {
         id = try c.decode(Int.self, forKey: .id)
         product_id = try c.decode(Many2One.self, forKey: .product_id)
         quantity = try c.decodeIfPresent(Double.self, forKey: .quantity) ?? 0
-        qty_done = try c.decodeIfPresent(Double.self, forKey: .qty_done)
         product_uom_id = try? c.decode(Many2One.self, forKey: .product_uom_id)
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, product_id, quantity, qty_done, product_uom_id
+        case id, product_id, quantity, product_uom_id
     }
 }

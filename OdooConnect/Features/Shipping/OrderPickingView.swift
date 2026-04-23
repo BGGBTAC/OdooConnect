@@ -66,7 +66,7 @@ struct OrderPickingView: View {
                 line: line,
                 text: $manualText
             ) { newQty in
-                model.setQuantity(newQty, for: line.moveLineId)
+                model.setQuantity(newQty, for: line.moveId)
                 manualEditingLine = nil
             }
             .presentationDetents([.height(220)])
@@ -151,7 +151,7 @@ struct OrderPickingView: View {
                             manualText = formatted(line.picked)
                             manualEditingLine = line
                         }
-                        .id(line.moveLineId)
+                        .id(line.moveId)
                     }
                     if model.lines.isEmpty && !model.isLoading {
                         BrandedEmptyState(
@@ -167,7 +167,7 @@ struct OrderPickingView: View {
                 if let flash = model.lastScanFlash, flash.kind == .picked {
                     if let firstUpdated = model.lines.first(where: { $0.displayName == flash.title }) {
                         withAnimation(.spring) {
-                            proxy.scrollTo(firstUpdated.moveLineId, anchor: .center)
+                            proxy.scrollTo(firstUpdated.moveId, anchor: .center)
                         }
                     }
                 }
