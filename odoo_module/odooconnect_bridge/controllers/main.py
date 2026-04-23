@@ -39,10 +39,7 @@ class OdooConnectBridge(http.Controller):
     def oauth_complete(self, **kwargs):
         user = request.env.user
         try:
-            api_key_record = request.env["res.users.apikeys"].sudo()._generate(
-                scope="rpc",
-                name="OdooConnect iOS",
-            )
+            api_key_record = self._generate_key(scope="rpc", name="OdooConnect iOS")
         except Exception as exc:  # noqa: BLE001 -- show the user a real error
             _logger.exception("OdooConnect bridge: API key generation failed")
             return self._error_page(f"API-Key konnte nicht erzeugt werden: {exc}")
@@ -70,6 +67,25 @@ class OdooConnectBridge(http.Controller):
         return self._success_page(callback)
 
     # -- helpers --
+
+    def _generate_key(self, scope, name):
+        """Calls `res.users.apikeys._generate(...)` in a way that survives
+        Odoo's signature changes across versions:
+            - 17.0:  _generate(scope, name)                     [2 args]
+            - 17.0+: _generate(scope, name, expiration_date=None) [opt]
+            - 18.0+: _generate(scope, name, expiration_date)    [required]
+
+        We always pass `expiration_date=False` (= no expiration), and fall
+        back to the 2-arg form on older builds via a TypeError catch.
+        """
+        api_keys = request.env["res.users.apikeys"].sudo()
+        try:
+            return api_keys._generate(scope, name, False)
+        except TypeError:
+            try:
+                return api_keys._generate(scope, name, expiration_date=False)
+            except TypeError:
+                return api_keys._generate(scope, name)
 
     def _success_page(self, callback_url: str):
         # Three layers of redirect so the in-app browser absolutely fires
