@@ -81,16 +81,10 @@
     "Angebote" : {
 
     },
-    "Anmelden" : {
-
-    },
     "Anzahl" : {
 
     },
-    "API‑Key" : {
-
-    },
-    "API‑Keys erstellst du in Odoo unter Einstellungen → Benutzer → Konto‑Sicherheit → API‑Keys." : {
+    "API-Keys erstellst du in Odoo unter Einstellungen → Benutzer → Konto-Sicherheit → API-Keys." : {
 
     },
     "App" : {
@@ -150,7 +144,7 @@
     "Datum" : {
 
     },
-    "E‑Mail oder Login" : {
+    "Dein Odoo. In der Hand." : {
 
     },
     "Einkaufbar" : {
@@ -219,9 +213,6 @@
     "Kein verfügbarer Bestand auf internen Standorten." : {
 
     },
-    "Keine Angebote" : {
-
-    },
     "Keine Artikel unter der Schwelle." : {
 
     },
@@ -232,9 +223,6 @@
 
     },
     "Keine Produkte" : {
-
-    },
-    "Keine Rechnungen" : {
 
     },
     "Keine Treffer" : {
@@ -301,6 +289,9 @@
 
     },
     "Min %.0f" : {
+
+    },
+    "Mit API-Key anmelden" : {
 
     },
     "Name oder Artikelnummer" : {
@@ -423,7 +414,7 @@
     "Synchronisiert" : {
 
     },
-    "Tippe auf +, um ein neues Angebot zu erstellen." : {
+    "t" : {
 
     },
     "Top Produkte" : {
@@ -462,6 +453,9 @@
     "Unterschrift löschen" : {
 
     },
+    "v" : {
+
+    },
     "Variante" : {
 
     },
@@ -469,6 +463,12 @@
 
     },
     "Verfügbar: %.0f" : {
+
+    },
+    "Vergleich:" : {
+
+    },
+    "Verkauf, Lager, Lieferung & Inventur — direkt vom iPhone und iPad." : {
 
     },
     "Verkaufbar" : {
@@ -484,9 +484,6 @@
 
     },
     "Versendet" : {
-
-    },
-    "Versuche einen anderen Suchbegriff." : {
 
     },
     "Vorlage: %@" : {
@@ -505,9 +502,6 @@
 
     },
     "Zeit" : {
-
-    },
-    "Zeitraum" : {
 
     },
     "Ziel" : {
