@@ -1,0 +1,96 @@
+<h2>Welche Verbesserungsrichtung soll ich umsetzen?</h2>
+<p class="subtitle">Ich empfehle A: die operativen Kernflows ruhiger, dichter und robuster machen. Das passt am besten zu OdooConnect als Sales- und Warehouse-Companion.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A · Operational Polish</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <div class="label">Picking</div>
+              <div style="border:1px solid #d7dce3;border-radius:8px;padding:10px;margin-top:6px">
+                <div style="display:flex;justify-content:space-between;font-weight:700"><span>WH/OUT/0421</span><span>8 / 12</span></div>
+                <div style="height:6px;background:#e5e7eb;border-radius:6px;margin:8px 0"><div style="height:6px;width:66%;background:#16a34a;border-radius:6px"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span>SKU · Barcode · Lagerort</span><strong>Scannen</strong></div>
+              </div>
+            </div>
+            <div>
+              <div class="label">Inventur</div>
+              <div style="border:1px solid #d7dce3;border-radius:8px;padding:10px;margin-top:6px">
+                <div style="font-weight:700">Produkt gefunden</div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px"><span>WH/Stock</span><strong>14 Stk</strong></div>
+                <div style="display:flex;gap:6px;margin-top:10px"><button class="mock-button">Korrigieren</button><button class="mock-button">Umlagern</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Kernflows härten</h3>
+      <p>Dichtere Picking-/Inventur-UI, weniger Glass-Deko, bessere Error/Empty States, klarere Aktionen und Statuszeilen.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B · Dashboard Control Center</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <div class="placeholder" style="height:58px">Revenue</div>
+            <div class="placeholder" style="height:58px">Orders</div>
+            <div class="placeholder" style="height:58px">Stock</div>
+          </div>
+          <div class="placeholder" style="height:120px;margin-top:12px">Charts + alerts</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Dashboard zuerst</h3>
+      <p>Dashboard als Management-Cockpit ausbauen. Sichtbarer, aber weniger Wirkung auf die mobilen Lager-Workflows.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C · Broad Feature Pass</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="placeholder" style="height:54px">Quotes</div>
+            <div class="placeholder" style="height:54px">Orders</div>
+            <div class="placeholder" style="height:54px">Invoices</div>
+            <div class="placeholder" style="height:54px">Products</div>
+          </div>
+          <div class="placeholder" style="height:52px;margin-top:10px">Many small changes</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · Breiter Feinschliff</h3>
+      <p>Kleine Verbesserungen überall. Geringeres Risiko je Screen, aber weniger spürbare Verbesserung pro Workflow.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Meine Empfehlung</h4>
+    <ul>
+      <li>A liefert den größten Nutzen für iPhone/iPad vor Ort.</li>
+      <li>Die App wirkt danach weniger dekorativ und schneller bedienbar.</li>
+      <li>Der Scope bleibt realistisch für einen sauberen Pass.</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>Nicht im ersten Pass</h4>
+    <ul>
+      <li>Keine neuen Großfeatures wie Lot-/Serial-Handling.</li>
+      <li>Kein kompletter Dashboard-Neubau.</li>
+      <li>Kein allumfassender Redesign der ganzen App.</li>
+    </ul>
+  </div>
+</div>

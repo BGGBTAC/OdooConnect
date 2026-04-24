@@ -67,7 +67,6 @@
     <key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>
-        <string>processing</string>
     </array>
     <key>NSCameraUsageDescription</key>
     <string>OdooCompanion nutzt die Kamera zum Scannen von Produkt-Barcodes für die Inventur.</string>

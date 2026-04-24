@@ -1,34 +1,31 @@
 import Foundation
 import AuthenticationServices
+import Security
 import Synchronization
 import UIKit
 
-/// Drives the browser-based sign-in flow against Odoo. Opens
-/// `/web/login?redirect=/api/odooconnect/oauth_complete` in
-/// `ASWebAuthenticationSession`, lets the user authenticate by any means
-/// the server supports (password, Google, Microsoft, SAML, …), and
-/// receives the resulting API key over a custom URL scheme.
+/// Drives the browser-based sign-in flow against Odoo. The browser callback
+/// carries only a short-lived one-time code; the app exchanges that code for
+/// the API key over HTTPS so credentials never appear in a custom-scheme URL.
 ///
-/// Requires the `odooconnect_bridge` Odoo module to be installed on the
-/// target server — without it, the redirect URL 404s and the flow throws
-/// `OAuthError.bridgeMissing`.
+/// Requires the `odooconnect_bridge` module on the target server.
 @MainActor
 final class OAuthClient {
     static let callbackScheme = "odooconnect"
-    private static let callbackHost = "oauth-callback"
+    static let callbackHost = "oauth-callback"
     private static let bridgePath = "/api/odooconnect/oauth_complete"
+    private static let exchangePath = "/api/odooconnect/oauth_exchange"
 
     private let presentationProvider = OAuthPresentationProvider()
 
     func signIn(serverURL: URL) async throws -> OAuthResult {
-        let authURL = Self.buildAuthURL(serverURL: serverURL)
+        let state = Self.makeState()
+        let authURL = Self.buildAuthURL(serverURL: serverURL, state: state)
 
         // ASWebAuthenticationSession on iOS 26 sometimes fires the
         // completion handler twice (once on URL intercept, once on the
         // session's own dismissal), and `session.start()` returning
-        // `false` after a queued completion handler can race the same
-        // way. Wrap the resume in an idempotency guard so a second
-        // call is a no-op instead of crashing CheckedContinuation.
+        // `false` after a queued completion handler can race the same way.
         let single = SingleResume()
 
         let callbackURL: URL = try await withCheckedThrowingContinuation { continuation in
@@ -47,8 +44,6 @@ final class OAuthClient {
                 }
             }
             session.presentationContextProvider = presentationProvider
-            // Don't share Odoo cookies with the user's regular Safari —
-            // the OAuth session here is single-purpose.
             session.prefersEphemeralWebBrowserSession = true
             if !session.start() {
                 single.resume {
@@ -57,16 +52,76 @@ final class OAuthClient {
             }
         }
 
-        return try OAuthResult(callback: callbackURL)
+        let callback = try OAuthCallback(callback: callbackURL, expectedState: state)
+        return try await Self.exchange(callback: callback, serverURL: serverURL)
     }
 
     /// Open the bridge endpoint directly. Odoo's `auth='user'` machinery
-    /// will detect "no session" and redirect to its own login page with the
-    /// proper `?redirect=` already set internally — far more reliable than
-    /// us hand-crafting `/web/login?redirect=...`, which Odoo sometimes
-    /// drops across OAuth-provider round-trips.
-    private static func buildAuthURL(serverURL: URL) -> URL {
-        serverURL.appendingPathComponent(bridgePath)
+    /// redirects unauthenticated users to its own login page and preserves
+    /// the original URL, including our state parameter.
+    private static func buildAuthURL(serverURL: URL, state: String) -> URL {
+        var components = URLComponents(
+            url: appendingOdooPath(bridgePath, to: serverURL),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [URLQueryItem(name: "state", value: state)]
+        return components?.url ?? appendingOdooPath(bridgePath, to: serverURL)
+    }
+
+    private static func exchange(callback: OAuthCallback, serverURL: URL) async throws -> OAuthResult {
+        var request = URLRequest(url: appendingOdooPath(exchangePath, to: serverURL))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONEncoder().encode(OAuthExchangeRequest(code: callback.code))
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw OAuthError.underlying(error)
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw OAuthError.malformedExchangeResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            if let serverError = try? JSONDecoder().decode(OAuthExchangeErrorResponse.self, from: data),
+               !serverError.error.isEmpty {
+                throw OAuthError.serverMessage(serverError.error)
+            }
+            throw OAuthError.serverMessage("OAuth-Code konnte nicht eingeloest werden (HTTP \(http.statusCode)).")
+        }
+
+        let payload = try JSONDecoder().decode(OAuthExchangeResponse.self, from: data)
+        return try OAuthResult(response: payload)
+    }
+
+    private static func appendingOdooPath(_ path: String, to serverURL: URL) -> URL {
+        guard var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: false) else {
+            return serverURL.appendingPathComponent(path)
+        }
+        let basePath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let childPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        components.path = "/" + [basePath, childPath]
+            .filter { !$0.isEmpty }
+            .joined(separator: "/")
+        components.query = nil
+        components.fragment = nil
+        return components.url ?? serverURL.appendingPathComponent(path)
+    }
+
+    private static func makeState() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        let count = bytes.count
+        let status = bytes.withUnsafeMutableBytes { buffer in
+            SecRandomCopyBytes(kSecRandomDefault, count, buffer.baseAddress!)
+        }
+        guard status == errSecSuccess else {
+            return UUID().uuidString + UUID().uuidString
+        }
+        return bytes.map { String(format: "%02x", $0) }.joined()
     }
 
     private static func translate(_ error: Error) -> OAuthError {
@@ -82,30 +137,75 @@ final class OAuthClient {
     }
 }
 
-/// Strongly-typed payload received over `odooconnect://oauth-callback`.
+/// Payload received over `odooconnect://oauth-callback`.
+/// It deliberately contains no secret.
+struct OAuthCallback: Sendable {
+    let code: String
+
+    init(callback: URL, expectedState: String) throws {
+        guard
+            callback.scheme?.lowercased() == OAuthClient.callbackScheme,
+            callback.host() == OAuthClient.callbackHost,
+            let components = URLComponents(url: callback, resolvingAgainstBaseURL: false),
+            let items = components.queryItems
+        else {
+            throw OAuthError.malformedCallback
+        }
+
+        var dict: [String: String] = [:]
+        for item in items {
+            dict[item.name] = item.value ?? ""
+        }
+
+        guard dict["state"] == expectedState else {
+            throw OAuthError.stateMismatch
+        }
+        guard let code = dict["code"], !code.isEmpty else {
+            throw OAuthError.malformedCallback
+        }
+        self.code = code
+    }
+}
+
+struct OAuthExchangeRequest: Encodable, Sendable {
+    let code: String
+}
+
+struct OAuthExchangeResponse: Decodable, Sendable {
+    let apiKey: String
+    let uid: Int
+    let login: String
+    let database: String
+
+    enum CodingKeys: String, CodingKey {
+        case apiKey = "api_key"
+        case uid, login, database
+    }
+}
+
+private struct OAuthExchangeErrorResponse: Decodable, Sendable {
+    let error: String
+}
+
 struct OAuthResult: Sendable {
     let apiKey: String
     let uid: Int
     let login: String
     let database: String
 
-    init(callback: URL) throws {
-        guard let components = URLComponents(url: callback, resolvingAgainstBaseURL: false),
-              let items = components.queryItems else {
-            throw OAuthError.malformedCallback
-        }
-        let dict = Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
-        guard let apiKey = dict["api_key"], !apiKey.isEmpty,
-              let uidString = dict["uid"], let uid = Int(uidString),
-              let login = dict["login"], !login.isEmpty,
-              let database = dict["database"], !database.isEmpty
+    init(response: OAuthExchangeResponse) throws {
+        guard
+            !response.apiKey.isEmpty,
+            response.uid > 0,
+            !response.login.isEmpty,
+            !response.database.isEmpty
         else {
-            throw OAuthError.malformedCallback
+            throw OAuthError.malformedExchangeResponse
         }
-        self.apiKey = apiKey
-        self.uid = uid
-        self.login = login
-        self.database = database
+        self.apiKey = response.apiKey
+        self.uid = response.uid
+        self.login = response.login
+        self.database = response.database
     }
 }
 
@@ -113,7 +213,10 @@ enum OAuthError: LocalizedError {
     case cancelled
     case failedToStart
     case malformedCallback
+    case stateMismatch
+    case malformedExchangeResponse
     case bridgeMissing
+    case serverMessage(String)
     case underlying(Error)
 
     var errorDescription: String? {
@@ -123,21 +226,24 @@ enum OAuthError: LocalizedError {
         case .failedToStart:
             return "Browser-Anmeldung konnte nicht gestartet werden."
         case .malformedCallback:
-            return "Antwort vom Server war unvollständig — ist das OdooConnect-Bridge-Modul installiert?"
+            return "Antwort vom Server war unvollstaendig. Ist das OdooConnect-Bridge-Modul aktuell installiert?"
+        case .stateMismatch:
+            return "Browser-Anmeldung wurde aus Sicherheitsgruenden abgebrochen."
+        case .malformedExchangeResponse:
+            return "Antwort vom Server war unvollstaendig. Bitte OdooConnect-Bridge aktualisieren."
         case .bridgeMissing:
             return "Auf dem Odoo-Server fehlt das OdooConnect-Bridge-Modul."
+        case .serverMessage(let message):
+            return message
         case .underlying(let error):
             return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 }
 
-/// `ASWebAuthenticationSession` needs a `UIWindow` to anchor its
-/// presentation. We grab the current key window from the active scene.
 /// Tiny mutex around a "did we already resume this continuation" flag.
 /// Lives outside the `@MainActor` actor isolation so the iOS-internal
-/// completion handler thread can hit it safely. `Mutex` lets the
-/// compiler prove `Sendable` correctness without `@unchecked`.
+/// completion handler thread can hit it safely.
 private final class SingleResume: Sendable {
     private let done = Mutex<Bool>(false)
 
@@ -157,9 +263,6 @@ private final class OAuthPresentationProvider: NSObject, ASWebAuthenticationPres
         MainActor.assumeIsolated {
             let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
-            // The user can only tap the OAuth button when at least one
-            // window scene exists; the force-unwrap here is for the
-            // never-happens path.
             return scene?.windows.first(where: { $0.isKeyWindow })
                 ?? ASPresentationAnchor(windowScene: scene!)
         }

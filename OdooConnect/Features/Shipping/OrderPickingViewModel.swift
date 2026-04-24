@@ -47,6 +47,11 @@ final class OrderPickingViewModel {
         let subtitle: String
     }
 
+    enum CommitOutcome: Equatable, Sendable {
+        case completed(String)
+        case requiresBackorder
+    }
+
     init(pickingId: Int, pickingName: String) {
         self.pickingId = pickingId
         self.pickingName = pickingName
@@ -180,7 +185,11 @@ final class OrderPickingViewModel {
     /// Push the picked quantities + carrier choice to Odoo and validate.
     /// Returns a user-facing message describing the result; the caller
     /// can show it as a banner / alert.
-    func commit(using client: OdooClient?, selectedCarrier: DeliveryCarrier?) async -> String? {
+    func commit(
+        using client: OdooClient?,
+        selectedCarrier: DeliveryCarrier?,
+        carrierWasChanged: Bool
+    ) async -> CommitOutcome? {
         guard let client else { return nil }
         isCommitting = true
         defer { isCommitting = false }
@@ -195,13 +204,23 @@ final class OrderPickingViewModel {
                 )
             }
 
-            // 2. Update carrier if changed.
-            if let selected = selectedCarrier, selected.id != currentCarrier?.id {
-                _ = try await client.write(
-                    model: "stock.picking",
-                    ids: [pickingId],
-                    values: ["carrier_id": .int(selected.id)]
-                )
+            // 2. Update or clear carrier if the picker changed it.
+            if carrierWasChanged {
+                if let selectedCarrier {
+                    if selectedCarrier.id != currentCarrier?.id {
+                        _ = try await client.write(
+                            model: "stock.picking",
+                            ids: [pickingId],
+                            values: ["carrier_id": .int(selectedCarrier.id)]
+                        )
+                    }
+                } else if currentCarrier?.isEmpty == false {
+                    _ = try await client.write(
+                        model: "stock.picking",
+                        ids: [pickingId],
+                        values: ["carrier_id": .bool(false)]
+                    )
+                }
             }
 
             // 3. Validate the picking.
@@ -214,11 +233,11 @@ final class OrderPickingViewModel {
             if case .object(let dict) = result,
                case .string(let model)? = dict["res_model"] {
                 if model == "stock.backorder.confirmation" {
-                    return "Backorder-Wizard erforderlich — bitte in der App-Web-Ansicht abschließen."
+                    return .requiresBackorder
                 }
-                return "Odoo erwartet zusätzlichen Wizard (\(model))."
+                return .completed("Odoo erwartet zusätzlichen Wizard (\(model)).")
             }
-            return "Lieferung versendet."
+            return .completed("Lieferung versendet.")
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             return nil

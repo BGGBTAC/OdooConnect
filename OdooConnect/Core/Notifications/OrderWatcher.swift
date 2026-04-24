@@ -16,7 +16,9 @@ final class OrderWatcher {
     static let threadIdentifier = "new-orders"
 
     private weak var auth: AuthManager?
-    private let lastSeenKey = "orderWatcher.lastSeenId"
+    private let lastSeenWriteDateKey = "orderWatcher.lastSeenWriteDate"
+    private let notifiedOrderIdsKey = "orderWatcher.notifiedOrderIds"
+    private let maxRememberedNotificationIds = 200
     private let unreadCountKey = "orderWatcher.unreadCount"
 
     var notificationsEnabled: Bool {
@@ -35,7 +37,10 @@ final class OrderWatcher {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])
             UserDefaults.standard.set(granted, forKey: "orderWatcher.enabled")
-            if granted { scheduleNextRefresh() }
+            if granted {
+                await seedNotificationWatermarkIfNeeded(using: auth?.client)
+                scheduleNextRefresh()
+            }
             return granted
         } catch {
             return false
@@ -61,8 +66,6 @@ final class OrderWatcher {
         UserDefaults.standard.set(0, forKey: unreadCountKey)
         Task {
             try? await UNUserNotificationCenter.current().setBadgeCount(0)
-            UNUserNotificationCenter.current()
-                .removeDeliveredNotifications(withIdentifiers: [])
             // Cheaper than enumerating: drop the whole group by thread.
             let center = UNUserNotificationCenter.current()
             let delivered = await center.deliveredNotifications()
@@ -97,26 +100,43 @@ final class OrderWatcher {
     /// the BGTask completed with a meaningful flag.
     func performRefresh() async -> Int {
         guard let client = auth?.client, notificationsEnabled else { return 0 }
-        let lastSeen = UserDefaults.standard.integer(forKey: lastSeenKey)
+        guard let watermark = UserDefaults.standard.string(forKey: lastSeenWriteDateKey) else {
+            await seedNotificationWatermarkIfNeeded(using: client)
+            scheduleNextRefresh()
+            return 0
+        }
         do {
-            let orders: [SaleOrder] = try await client.searchRead(
+            let orders: [WatchedOrderDTO] = try await client.searchRead(
                 model: "sale.order",
                 domain: [
                     .array([.string("state"), .string("="), .string("sale")]),
-                    .array([.string("id"), .string(">"), .int(lastSeen)])
+                    .array([.string("write_date"), .string(">"), .string(watermark)])
                 ],
-                fields: SaleOrder.fields,
+                fields: WatchedOrderDTO.fields,
                 limit: 20,
-                order: "id desc"
+                order: "write_date asc, id asc"
             )
-            for order in orders.reversed() {
-                await postNotification(for: order)
+
+            var rememberedIds = notifiedOrderIds()
+            var postedCount = 0
+            for order in orders {
+                if !rememberedIds.contains(order.id) {
+                    await postNotification(for: order.saleOrder)
+                    rememberedIds.append(order.id)
+                    postedCount += 1
+                }
             }
-            if let newest = orders.first {
-                UserDefaults.standard.set(newest.id, forKey: lastSeenKey)
+            if let newest = orders.last {
+                UserDefaults.standard.set(
+                    DateFormatter.odooDateTime.string(from: newest.write_date),
+                    forKey: lastSeenWriteDateKey
+                )
+            }
+            if postedCount > 0 {
+                storeNotifiedOrderIds(rememberedIds)
             }
             scheduleNextRefresh()
-            return orders.count
+            return postedCount
         } catch {
             scheduleNextRefresh()
             return 0
@@ -153,5 +173,73 @@ final class OrderWatcher {
             trigger: nil
         )
         try? await UNUserNotificationCenter.current().add(request)
+    }
+
+    private func seedNotificationWatermarkIfNeeded(using client: OdooClient?) async {
+        guard UserDefaults.standard.string(forKey: lastSeenWriteDateKey) == nil else { return }
+
+        if let client {
+            let latest: [WatchedOrderDTO]? = try? await client.searchRead(
+                model: "sale.order",
+                domain: [.array([.string("state"), .string("="), .string("sale")])],
+                fields: WatchedOrderDTO.fields,
+                limit: 1,
+                order: "write_date desc, id desc"
+            )
+            if let newest = latest?.first {
+                UserDefaults.standard.set(
+                    DateFormatter.odooDateTime.string(from: newest.write_date),
+                    forKey: lastSeenWriteDateKey
+                )
+                return
+            }
+        }
+
+        UserDefaults.standard.set(
+            DateFormatter.odooDateTime.string(from: .now),
+            forKey: lastSeenWriteDateKey
+        )
+    }
+
+    private func notifiedOrderIds() -> [Int] {
+        let raw = UserDefaults.standard.string(forKey: notifiedOrderIdsKey) ?? ""
+        return raw
+            .split(separator: ",")
+            .compactMap { Int($0) }
+    }
+
+    private func storeNotifiedOrderIds(_ ids: [Int]) {
+        let bounded = Array(ids.suffix(maxRememberedNotificationIds))
+        UserDefaults.standard.set(
+            bounded.map(String.init).joined(separator: ","),
+            forKey: notifiedOrderIdsKey
+        )
+    }
+}
+
+private struct WatchedOrderDTO: Decodable, Sendable {
+    let id: Int
+    let name: String
+    let partner_id: Many2One
+    let date_order: Date
+    let amount_total: Double
+    let amount_untaxed: Double
+    let state: String
+    let currency_id: Many2One
+    let write_date: Date
+
+    static let fields: [String] = SaleOrder.fields + ["write_date"]
+
+    var saleOrder: SaleOrder {
+        SaleOrder(
+            id: id,
+            name: name,
+            partner_id: partner_id,
+            date_order: date_order,
+            amount_total: amount_total,
+            amount_untaxed: amount_untaxed,
+            state: state,
+            currency_id: currency_id
+        )
     }
 }

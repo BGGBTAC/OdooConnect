@@ -23,11 +23,13 @@ actor OutboxProcessor {
         defer { isProcessing = false }
 
         let pending = DraftStatus.pending.rawValue
+        let sending = DraftStatus.sending.rawValue
         let failed = DraftStatus.failed.rawValue
         let max = Self.maxAttempts
         let descriptor = FetchDescriptor<DraftQuote>(
             predicate: #Predicate { draft in
                 draft.statusRaw == pending ||
+                draft.statusRaw == sending ||
                 (draft.statusRaw == failed && draft.attempts < max)
             },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]

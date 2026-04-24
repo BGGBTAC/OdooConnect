@@ -207,7 +207,7 @@ struct LoginView: View {
     private var testURL: String {
         let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return "\(trimmed)/api/odooconnect/oauth_complete"
+        return "\(trimmed)/api/odooconnect/oauth_complete?state=diagnostic"
     }
 
     private var advancedDisclosure: some View {

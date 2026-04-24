@@ -15,7 +15,9 @@ struct OrderPickingView: View {
 
     @State private var model: OrderPickingViewModel
     @State private var showCarrierSheet = false
+    @State private var showingBackorderSheet = false
     @State private var selectedCarrier: DeliveryCarrier?
+    @State private var carrierWasChanged = false
     @State private var manualEditingLine: PickableLine?
     @State private var manualText: String = ""
     @State private var commitMessage: String?
@@ -55,11 +57,21 @@ struct OrderPickingView: View {
         .sheet(isPresented: $showCarrierSheet) {
             CarrierPickerSheet(
                 carriers: model.availableCarriers,
-                currentCarrierId: selectedCarrier?.id ?? model.currentCarrier?.id
+                currentCarrierId: carrierWasChanged ? selectedCarrier?.id : model.currentCarrier?.id
             ) { picked in
                 selectedCarrier = picked
+                carrierWasChanged = true
             }
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingBackorderSheet) {
+            BackorderConfirmationSheet(
+                pickingId: pickingId,
+                pickingName: pickingName
+            ) { message in
+                commitMessage = message
+            }
+            .presentationDetents([.medium])
         }
         .sheet(item: $manualEditingLine) { line in
             ManualQuantitySheet(
@@ -218,6 +230,9 @@ struct OrderPickingView: View {
     // MARK: - Helpers
 
     private var carrierToolbarLabel: String {
+        if carrierWasChanged {
+            return selectedCarrier?.name ?? "Kein Versender"
+        }
         if let c = selectedCarrier { return c.name }
         if let c = model.currentCarrier, !c.isEmpty { return c.name }
         return "Versender"
@@ -227,12 +242,22 @@ struct OrderPickingView: View {
         if let current = model.currentCarrier, !current.isEmpty {
             selectedCarrier = model.availableCarriers.first { $0.id == current.id }
         }
+        carrierWasChanged = false
     }
 
     private func commit() async {
-        let result = await model.commit(using: auth.client, selectedCarrier: selectedCarrier)
-        if let result {
-            commitMessage = result
+        let result = await model.commit(
+            using: auth.client,
+            selectedCarrier: selectedCarrier,
+            carrierWasChanged: carrierWasChanged
+        )
+        switch result {
+        case .completed(let message):
+            commitMessage = message
+        case .requiresBackorder:
+            showingBackorderSheet = true
+        case nil:
+            break
         }
     }
 

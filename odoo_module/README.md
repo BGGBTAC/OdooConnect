@@ -3,7 +3,8 @@
 Companion Odoo module for the OdooConnect iOS app. Adds a single endpoint
 that converts a successful browser-based Odoo login (password or any
 configured OAuth provider — Google, Microsoft, SAML, …) into a fresh API
-key, then bounces the user back into the iOS app via a custom URL scheme.
+key, then bounces the user back into the iOS app with a short-lived
+one-time code. The app exchanges that code for the key over HTTPS.
 
 ## Why it exists
 
@@ -11,8 +12,9 @@ The iOS client uses API-key auth for all JSON-RPC calls. Without this
 bridge, the user has to manually create an API key in Odoo and copy it
 into the app on first launch. With the bridge installed, the user taps
 **Über Browser anmelden** in the app, signs into Odoo (using whatever
-mechanism their company configured), and the app receives a usable key
-without anyone touching `Settings → My Profile → Account Security → API Keys`.
+mechanism their company configured), and the app receives a usable key after
+an HTTPS code exchange without anyone touching
+`Settings → My Profile → Account Security → API Keys`.
 
 ## Installation
 
@@ -24,8 +26,9 @@ without anyone touching `Settings → My Profile → Account Security → API Ke
 3. In the Odoo UI, go to **Apps**, search for "OdooConnect Bridge",
    and click **Install**.
 
-The module has no UI — installation just registers the
-`/api/odooconnect/oauth_complete` HTTP route.
+The module has no UI — installation registers the
+`/api/odooconnect/oauth_complete` and `/api/odooconnect/oauth_exchange`
+HTTP routes.
 
 ## Optional: enable Google / Microsoft sign-in
 
@@ -52,10 +55,9 @@ flow uses that same login page, so no app changes are needed.
   `bypass_create` permission, which most regular users don't have.
 - Each successful sign-in creates a *new* key. Old keys remain valid
   until explicitly revoked. Recommend periodic cleanup.
-- The custom URL scheme (`odooconnect://`) means the API key is
-  briefly visible in the in-app browser's URL bar before the redirect
-  completes. This is unavoidable but no different from standard OAuth
-  PKCE flows.
+- The custom URL scheme (`odooconnect://`) carries only a one-time code and
+  state value. The API key itself is returned only by the HTTPS exchange
+  endpoint and the code is deleted after first use.
 
 ## Compatible Odoo versions
 

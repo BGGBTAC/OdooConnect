@@ -36,3 +36,14 @@ targets:
         DEVELOPMENT_LANGUAGE: de
         SWIFT_EMIT_LOC_STRINGS: YES
         INFOPLIST_KEY_CFBundleDisplayName: OdooCompanion
+  OdooConnectTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: OdooConnectTests
+    dependencies:
+      - target: OdooConnect
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.benedict.odooconnect.tests
