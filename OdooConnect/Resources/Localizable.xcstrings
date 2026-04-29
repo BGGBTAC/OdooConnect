@@ -120,6 +120,12 @@
             "state" : "new",
             "value" : "%1$@ / %2$@"
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / %@"
+          }
         }
       }
     },
@@ -129,6 +135,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@"
           }
         }
       }
@@ -140,6 +152,12 @@
             "state" : "new",
             "value" : "%1$@: %2$lld auf Lager, %3$lld eingehend (Prognose %4$lld)."
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %lld in stock, %lld incoming (forecast %lld)."
+          }
         }
       }
     },
@@ -150,6 +168,12 @@
             "state" : "new",
             "value" : "%1$@: %2$lld auf Lager, %3$lld reserviert (Prognose %4$lld)."
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %lld in stock, %lld reserved (forecast %lld)."
+          }
         }
       }
     },
@@ -159,6 +183,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@: %2$lld auf Lager."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %lld in stock."
           }
         }
       }
@@ -174,7 +204,14 @@
       }
     },
     "%lld Bestellungen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld orders"
+          }
+        }
+      }
     },
     "%lld Bestellungen heute, unter anderem von %@." : {
       "localizations" : {
@@ -182,6 +219,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld Bestellungen heute, unter anderem von %2$@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld orders today, including from %@."
           }
         }
       }
@@ -257,7 +300,14 @@
       }
     },
     "Aktuell" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current"
+          }
+        }
+      }
     },
     "Alles auf Lager" : {
       "localizations" : {
@@ -310,7 +360,14 @@
       }
     },
     "Anzahl bestätigter Bestellungen seit Mitternacht plus die ersten Kundennamen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of confirmed orders since midnight, plus the first few customer names."
+          }
+        }
+      }
     },
     "API-Keys erstellst du in Odoo unter Einstellungen → Benutzer → Konto-Sicherheit → API-Keys." : {
       "localizations" : {
@@ -343,13 +400,34 @@
       }
     },
     "Auch teilweise versenden" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ship partially"
+          }
+        }
+      }
     },
     "Auswahl" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selection"
+          }
+        }
+      }
     },
     "Auswertungen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reports"
+          }
+        }
+      }
     },
     "Backorder erforderlich" : {
       "localizations" : {
@@ -372,7 +450,14 @@
       }
     },
     "Barcode auf Artikel scannen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a barcode on the product"
+          }
+        }
+      }
     },
     "Barcode scannen" : {
       "extractionState" : "stale",
@@ -386,7 +471,14 @@
       }
     },
     "Barcode scannen oder Zeile antippen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a barcode or tap a row"
+          }
+        }
+      }
     },
     "Bearbeiten" : {
       "localizations" : {
@@ -399,7 +491,14 @@
       }
     },
     "Bedarf" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demand"
+          }
+        }
+      }
     },
     "Benachrichtigungen" : {
       "localizations" : {
@@ -452,16 +551,44 @@
       }
     },
     "Bestand für ${productQuery}" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stock for ${productQuery}"
+          }
+        }
+      }
     },
     "Bestand korrigieren" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust stock"
+          }
+        }
+      }
     },
     "Bestand pro Lager, letzter Verkauf, Korrektur" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stock by warehouse, last sale, adjustment"
+          }
+        }
+      }
     },
     "Bestand prüfen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check stock"
+          }
+        }
+      }
     },
     "Bestätigte Bestellungen nach Rechnungsstatus" : {
       "localizations" : {
@@ -494,7 +621,14 @@
       }
     },
     "Bestellungen heute" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's orders"
+          }
+        }
+      }
     },
     "Beträge" : {
       "localizations" : {
@@ -507,10 +641,24 @@
       }
     },
     "Bitte einen Produktnamen oder Artikelnummer angeben." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please provide a product name or SKU."
+          }
+        }
+      }
     },
     "Bitte erst in OdooCompanion anmelden." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please sign in to OdooCompanion first."
+          }
+        }
+      }
     },
     "Browser-Login hat nicht zurück zur App geleitet" : {
       "localizations" : {
@@ -523,7 +671,14 @@
       }
     },
     "Carrier suchen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search carriers"
+          }
+        }
+      }
     },
     "Code im grünen Rahmen ausrichten" : {
       "localizations" : {
@@ -586,10 +741,24 @@
       }
     },
     "Du hast Benachrichtigungen für OdooCompanion deaktiviert. Aktiviere sie in den iOS-Einstellungen, um neue Bestellungen zu erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've disabled notifications for OdooCompanion. Enable them in iOS Settings to receive new-order alerts."
+          }
+        }
+      }
     },
     "Eine Bestellung heute, von %@." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One order today, from %@."
+          }
+        }
+      }
     },
     "Einkaufbar" : {
       "localizations" : {
@@ -752,10 +921,24 @@
       }
     },
     "Heute noch kein Umsatz verbucht." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No revenue booked today yet."
+          }
+        }
+      }
     },
     "Heute noch keine bestätigten Bestellungen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No confirmed orders today yet."
+          }
+        }
+      }
     },
     "Hinweis" : {
       "localizations" : {
@@ -778,7 +961,14 @@
       }
     },
     "In den Einstellungen aktivieren" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable in Settings"
+          }
+        }
+      }
     },
     "Inventur" : {
       "localizations" : {
@@ -821,13 +1011,34 @@
       }
     },
     "Kein Bestand an internen Standorten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stock at internal locations."
+          }
+        }
+      }
     },
     "Kein Produkt gefunden" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No product found"
+          }
+        }
+      }
     },
     "Kein Produkt gefunden für %@." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No product found for %@."
+          }
+        }
+      }
     },
     "Kein verfügbarer Bestand auf internen Standorten." : {
       "localizations" : {
@@ -840,7 +1051,14 @@
       }
     },
     "Kein Versender" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No carrier"
+          }
+        }
+      }
     },
     "Keine Artikel unter der Schwelle." : {
       "localizations" : {
@@ -914,7 +1132,14 @@
       }
     },
     "Keine Versender konfiguriert." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No carriers configured."
+          }
+        }
+      }
     },
     "Kopieren" : {
       "localizations" : {
@@ -977,10 +1202,24 @@
       }
     },
     "Lade…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        }
+      }
     },
     "Lager" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warehouse"
+          }
+        }
+      }
     },
     "Lagerbestand" : {
       "localizations" : {
@@ -993,7 +1232,14 @@
       }
     },
     "Lagerbestand prüfen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check stock level"
+          }
+        }
+      }
     },
     "Lagerort" : {
       "localizations" : {
@@ -1026,7 +1272,14 @@
       }
     },
     "Liest den heutigen Umsatz aus Odoo vor (bestätigte Bestellungen seit Mitternacht)." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads today's revenue from Odoo aloud (confirmed orders since midnight)."
+          }
+        }
+      }
     },
     "Listenpreis" : {
       "localizations" : {
@@ -1084,6 +1337,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Mehrere Treffer. %1$@: %2$lld auf Lager."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiple matches. %@: %lld in stock."
           }
         }
       }
@@ -1159,7 +1418,14 @@
       }
     },
     "Name, Artikelnummer oder Barcode" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, SKU or barcode"
+          }
+        }
+      }
     },
     "Name, Artikelnummer, Barcode" : {
       "localizations" : {
@@ -1202,7 +1468,14 @@
       }
     },
     "Neue Bestellungen heute" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New orders today"
+          }
+        }
+      }
     },
     "Neue Bestellungen melden" : {
       "localizations" : {
@@ -1225,7 +1498,14 @@
       }
     },
     "Neuer Scan" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New scan"
+          }
+        }
+      }
     },
     "Neues Angebot" : {
       "localizations" : {
@@ -1278,7 +1558,14 @@
       }
     },
     "Odoo nicht erreichbar: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odoo unreachable: %@"
+          }
+        }
+      }
     },
     "Odoo Server" : {
       "localizations" : {
@@ -1341,19 +1628,54 @@
       }
     },
     "Pick this order" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick this order"
+          }
+        }
+      }
     },
     "Pick this order: scanne Barcodes, fülle Mengen, wähle Versender und versende in einem Schritt." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick this order: scan barcodes, fill in quantities, pick a carrier and ship in one step."
+          }
+        }
+      }
     },
     "Pick-Fortschritt" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick progress"
+          }
+        }
+      }
     },
     "Pick: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick: %@"
+          }
+        }
+      }
     },
     "Picking ohne Carrier-Zuweisung" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Picking without carrier assignment"
+          }
+        }
+      }
     },
     "Positionen" : {
       "localizations" : {
@@ -1386,7 +1708,14 @@
       }
     },
     "Produkt" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Product"
+          }
+        }
+      }
     },
     "Produkt hinzufügen" : {
       "localizations" : {
@@ -1410,10 +1739,24 @@
       }
     },
     "Produkt-Info" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Product info"
+          }
+        }
+      }
     },
     "Produkt-Info scannen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan product info"
+          }
+        }
+      }
     },
     "Produktbild vergrößern" : {
       "localizations" : {
@@ -1476,10 +1819,24 @@
       }
     },
     "Schließen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
     },
     "Schneller Scan, sofort anpassen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick scan, instant adjustment"
+          }
+        }
+      }
     },
     "Server" : {
       "localizations" : {
@@ -1562,7 +1919,14 @@
       }
     },
     "Stelle sicher, dass der Barcode in Odoo bei einem product.product hinterlegt ist." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure the barcode is set on a product.product record in Odoo."
+          }
+        }
+      }
     },
     "Suchergebnisse" : {
       "localizations" : {
@@ -1575,7 +1939,14 @@
       }
     },
     "Sucht ein Produkt nach Name, Artikelnummer oder Barcode und liest den Lagerbestand vor." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks up a product by name, SKU or barcode and reads its stock level aloud."
+          }
+        }
+      }
     },
     "Summe" : {
       "localizations" : {
@@ -1609,10 +1980,24 @@
       }
     },
     "Tagesumsatz" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's revenue"
+          }
+        }
+      }
     },
     "Tagesumsatz: %@." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's revenue: %@."
+          }
+        }
+      }
     },
     "Test:" : {
       "localizations" : {
@@ -1635,7 +2020,14 @@
       }
     },
     "Total: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total: %@"
+          }
+        }
+      }
     },
     "Tracking" : {
       "localizations" : {
@@ -1668,7 +2060,14 @@
       }
     },
     "Übernehmen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply"
+          }
+        }
+      }
     },
     "UID" : {
       "localizations" : {
@@ -1782,7 +2181,14 @@
       }
     },
     "Verfügbar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available"
+          }
+        }
+      }
     },
     "Verfügbar: %.0f" : {
       "localizations" : {
@@ -1845,7 +2251,14 @@
       }
     },
     "Versenden" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ship"
+          }
+        }
+      }
     },
     "Versender" : {
       "localizations" : {
@@ -1858,7 +2271,14 @@
       }
     },
     "Versender wählen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick carrier"
+          }
+        }
+      }
     },
     "Versendet" : {
       "localizations" : {
@@ -1911,7 +2331,14 @@
       }
     },
     "Welches Produkt soll ich nachschlagen?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which product should I look up?"
+          }
+        }
+      }
     },
     "Wenn der Test funktioniert aber der App-Login trotzdem im /web hängenbleibt: prüfe Odoo Server Logs auf \"OdooConnect bridge minted API key\"." : {
       "localizations" : {
@@ -1964,7 +2391,14 @@
       }
     },
     "Zuletzt verkauft" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last sold"
+          }
+        }
+      }
     },
     "Zwischensumme" : {
       "localizations" : {
