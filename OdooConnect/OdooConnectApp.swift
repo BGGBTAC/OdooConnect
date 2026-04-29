@@ -1,8 +1,6 @@
 import SwiftUI
 import SwiftData
-@preconcurrency import BackgroundTasks
 import UserNotifications
-import os
 
 @main
 struct OdooConnectApp: App {
@@ -29,41 +27,6 @@ struct OdooConnectApp: App {
         _draftSync = State(initialValue: DraftSync(container: container, auth: auth))
         _orderWatcher = State(initialValue: watcher)
         _router = State(initialValue: router)
-
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: OrderWatcher.backgroundTaskIdentifier,
-            using: nil
-        ) { task in
-            guard let refresh = task as? BGAppRefreshTask else {
-                task.setTaskCompleted(success: false)
-                return
-            }
-            // setTaskCompleted MUST be called exactly once: once from the
-            // work Task on success, or once from the expiration handler
-            // when the system reclaims the task. Calling it twice — or
-            // not at all from the expiration handler — terminates the
-            // app and shows up as a crash in the next launch.
-            let didComplete = OSAllocatedUnfairLock<Bool>(initialState: false)
-            @Sendable func complete(_ success: Bool) {
-                let shouldFinish: Bool = didComplete.withLock { state in
-                    guard !state else { return false }
-                    state = true
-                    return true
-                }
-                if shouldFinish {
-                    refresh.setTaskCompleted(success: success)
-                }
-            }
-
-            let work = Task { @MainActor in
-                _ = await watcher.performRefresh()
-                complete(true)
-            }
-            refresh.expirationHandler = {
-                work.cancel()
-                complete(false)
-            }
-        }
     }
 
     var body: some Scene {
@@ -81,6 +44,15 @@ struct OdooConnectApp: App {
                         orderWatcher.scheduleNextRefresh()
                     }
                 }
+        }
+        // SwiftUI's .backgroundTask handles BGTaskScheduler.register +
+        // setTaskCompleted + expiration via Task cancellation behind the
+        // scenes. Replaces the manual register block we used to do from
+        // init(), which crashed under Swift 6 strict concurrency with
+        // EXC_BREAKPOINT in `swift_task_checkIsolatedSwift` when iOS
+        // invoked the closure on a non-main system worker queue.
+        .backgroundTask(.appRefresh(OrderWatcher.backgroundTaskIdentifier)) {
+            await orderWatcher.performRefresh()
         }
     }
 
