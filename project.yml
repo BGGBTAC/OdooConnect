@@ -47,3 +47,4 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.benedict.odooconnect.tests
+        GENERATE_INFOPLIST_FILE: YES

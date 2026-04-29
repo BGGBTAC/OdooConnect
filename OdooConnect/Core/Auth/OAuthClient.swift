@@ -11,8 +11,8 @@ import UIKit
 /// Requires the `odooconnect_bridge` module on the target server.
 @MainActor
 final class OAuthClient {
-    static let callbackScheme = "odooconnect"
-    static let callbackHost = "oauth-callback"
+    nonisolated static let callbackScheme = "odooconnect"
+    nonisolated static let callbackHost = "oauth-callback"
     private static let bridgePath = "/api/odooconnect/oauth_complete"
     private static let exchangePath = "/api/odooconnect/oauth_exchange"
 
