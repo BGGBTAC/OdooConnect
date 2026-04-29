@@ -150,13 +150,23 @@ struct ProductEditSheet: View {
         guard !values.isEmpty else { dismiss(); return }
 
         do {
-            _ = try await client.write(
+            // `write_date` may be nil on freshly-imported products with
+            // no audit trail — fall back to `.distantPast` so the guard
+            // can never spuriously block the save.
+            _ = try await client.writeWithGuard(
                 model: "product.product",
-                ids: [product.id],
-                values: values
+                id: product.id,
+                values: values,
+                lastSeenWriteDate: product.write_date ?? .distantPast
             )
             await onSaved()
             dismiss()
+        } catch OdooError.conflict {
+            // Triggers the parent ProductDetailView to reload via its
+            // .task / .refreshable; we only show the alert and dismiss
+            // so the user sees fresh server-side data on next open.
+            self.error = "Das Produkt wurde gerade in Odoo geändert. Die Ansicht wird neu geladen — bitte deine Änderungen erneut anwenden."
+            await onSaved()
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

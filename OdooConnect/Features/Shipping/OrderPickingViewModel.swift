@@ -43,6 +43,9 @@ struct PickableLine: Identifiable, Sendable, Equatable {
     var picked: Double
     let uomName: String
     let tracking: Tracking
+    /// Server-side `write_date` snapshot at load time. Drives
+    /// optimistic-concurrency guarding when committing this line.
+    let writeDate: Date?
 
     var id: Int { moveId }
     var remaining: Double { max(0, demand - picked) }
@@ -57,6 +60,9 @@ final class OrderPickingViewModel {
     let pickingName: String
 
     var lines: [PickableLine] = []
+    /// The `stock.picking.write_date` we observed at load time. Used as
+    /// the OCC baseline when the user changes `carrier_id` on commit.
+    var pickingWriteDate: Date?
     var currentCarrier: Many2One?
     var availableCarriers: [DeliveryCarrier] = []
     var isLoading: Bool = false
@@ -77,6 +83,9 @@ final class OrderPickingViewModel {
     enum CommitOutcome: Equatable, Sendable {
         case completed(String)
         case requiresBackorder
+        /// Server's `write_date` moved between load and commit — somebody
+        /// else edited this picking. The view reloads on this signal.
+        case conflict
     }
 
     init(pickingId: Int, pickingName: String) {
@@ -97,7 +106,8 @@ final class OrderPickingViewModel {
         defer { isLoading = false }
         error = nil
         do {
-            // 1. Fetch the picking to get carrier + name.
+            // 1. Fetch the picking to get carrier + name + write_date
+            // (used as OCC baseline when carrier_id is changed).
             let pickings: [StockPicking] = try await client.searchRead(
                 model: "stock.picking",
                 domain: [.array([.string("id"), .string("="), .int(pickingId)])],
@@ -105,6 +115,7 @@ final class OrderPickingViewModel {
                 limit: 1
             )
             currentCarrier = pickings.first?.carrier_id
+            pickingWriteDate = pickings.first?.write_date
 
             // 2. Fetch the moves + their products in one batch. Filter out
             // cancelled moves so the user doesn't see ghost lines for
@@ -141,7 +152,8 @@ final class OrderPickingViewModel {
                     demand: dto.product_uom_qty,
                     picked: dto.quantity ?? 0,
                     uomName: dto.product_uom?.name ?? "Stk",
-                    tracking: PickableLine.Tracking(raw: p?.tracking)
+                    tracking: PickableLine.Tracking(raw: p?.tracking),
+                    writeDate: dto.write_date
                 )
             }
         } catch {
@@ -226,28 +238,32 @@ final class OrderPickingViewModel {
             // 1. Persist quantities on each `stock.move`. Odoo's ORM
             // splits the value back across the underlying move-lines.
             for line in lines {
-                _ = try await client.write(
+                _ = try await client.writeWithGuard(
                     model: "stock.move",
-                    ids: [line.moveId],
-                    values: ["quantity": .double(line.picked)]
+                    id: line.moveId,
+                    values: ["quantity": .double(line.picked)],
+                    lastSeenWriteDate: line.writeDate ?? .distantPast
                 )
             }
 
             // 2. Update or clear carrier if the picker changed it.
             if carrierWasChanged {
+                let baseline = pickingWriteDate ?? .distantPast
                 if let selectedCarrier {
                     if selectedCarrier.id != currentCarrier?.id {
-                        _ = try await client.write(
+                        _ = try await client.writeWithGuard(
                             model: "stock.picking",
-                            ids: [pickingId],
-                            values: ["carrier_id": .int(selectedCarrier.id)]
+                            id: pickingId,
+                            values: ["carrier_id": .int(selectedCarrier.id)],
+                            lastSeenWriteDate: baseline
                         )
                     }
                 } else if currentCarrier?.isEmpty == false {
-                    _ = try await client.write(
+                    _ = try await client.writeWithGuard(
                         model: "stock.picking",
-                        ids: [pickingId],
-                        values: ["carrier_id": .bool(false)]
+                        id: pickingId,
+                        values: ["carrier_id": .bool(false)],
+                        lastSeenWriteDate: baseline
                     )
                 }
             }
@@ -275,6 +291,12 @@ final class OrderPickingViewModel {
                 return .completed("Odoo erwartet zusätzlichen Wizard (\(model)).")
             }
             return .completed("Lieferung versendet.")
+        } catch OdooError.conflict {
+            // Don't replace the user's picked-quantity edits silently —
+            // surface the conflict so the OrderPickingView can prompt
+            // for a reload and let the user redecide.
+            self.error = "Diese Lieferung wurde gerade in Odoo geändert (z.B. parallel gepickt oder Carrier zugewiesen). Die Daten werden neu geladen — bitte deine Mengen erneut prüfen."
+            return .conflict
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             return nil
@@ -292,9 +314,10 @@ private struct PickingMoveDTO: Decodable, Sendable {
     let product_uom: Many2One?
     let product_uom_qty: Double      // demand (stable across all Odoo versions)
     let quantity: Double?            // Odoo 17+: done qty (computed + writable)
+    let write_date: Date?
 
     static let fields: [String] = [
-        "id", "product_id", "product_uom", "product_uom_qty", "quantity"
+        "id", "product_id", "product_uom", "product_uom_qty", "quantity", "write_date"
     ]
 
     init(from decoder: Decoder) throws {
@@ -304,10 +327,15 @@ private struct PickingMoveDTO: Decodable, Sendable {
         product_uom = try? c.decode(Many2One.self, forKey: .product_uom)
         product_uom_qty = try c.decodeIfPresent(Double.self, forKey: .product_uom_qty) ?? 0
         quantity = try c.decodeIfPresent(Double.self, forKey: .quantity)
+        if let bool = try? c.decode(Bool.self, forKey: .write_date), bool == false {
+            write_date = nil
+        } else {
+            write_date = try? c.decode(Date.self, forKey: .write_date)
+        }
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, product_id, product_uom, product_uom_qty, quantity
+        case id, product_id, product_uom, product_uom_qty, quantity, write_date
     }
 }
 

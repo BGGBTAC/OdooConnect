@@ -34,6 +34,9 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
     /// "none" / "lot" / "serial". Drives whether stock adjustments and
     /// pickings need a wizard to assign lot/serial numbers.
     let tracking: String
+    /// Server-side last-write timestamp. Used by `writeWithGuard` for
+    /// optimistic-concurrency conflict detection.
+    let write_date: Date?
 
     /// Base fields — safe for any Odoo install.
     static let baseFields: [String] = [
@@ -41,7 +44,7 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
         "default_code", "barcode", "description_sale",
         "uom_id", "categ_id", "product_tmpl_id",
         "product_template_attribute_value_ids",
-        "sale_ok", "purchase_ok", "active", "tracking"
+        "sale_ok", "purchase_ok", "active", "tracking", "write_date"
     ]
 
     /// Stock fields — only available when the `stock` module is installed.
@@ -91,6 +94,11 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
         purchase_ok = try c.decodeIfPresent(Bool.self, forKey: .purchase_ok) ?? true
         active = try c.decodeIfPresent(Bool.self, forKey: .active) ?? true
         tracking = (try? c.decodeIfPresent(String.self, forKey: .tracking)) ?? "none"
+        if let bool = try? c.decode(Bool.self, forKey: .write_date), bool == false {
+            write_date = nil
+        } else {
+            write_date = try? c.decode(Date.self, forKey: .write_date)
+        }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -98,7 +106,7 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
              description_sale, uom_id, categ_id, product_tmpl_id,
              product_template_attribute_value_ids, image_512,
              qty_available, virtual_available, incoming_qty, outgoing_qty,
-             sale_ok, purchase_ok, active, tracking
+             sale_ok, purchase_ok, active, tracking, write_date
     }
 
     /// True when Odoo requires explicit lot/serial assignment for any

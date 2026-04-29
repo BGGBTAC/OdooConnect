@@ -256,6 +256,15 @@ struct OrderPickingView: View {
             commitMessage = message
         case .requiresBackorder:
             showingBackorderSheet = true
+        case .conflict:
+            // Server-wins reload: drop the (now stale) carrier override
+            // and refetch lines + write_dates from the server. The user
+            // sees their old picked-quantity choices wiped — that's the
+            // contract of this strategy.
+            carrierWasChanged = false
+            selectedCarrier = nil
+            await model.load(using: auth.client)
+            preselectCarrier()
         case nil:
             break
         }

@@ -12,11 +12,13 @@ struct StockPicking: Identifiable, Sendable, Hashable, Decodable {
     let picking_type_id: Many2One
     let picking_type_code: String  // incoming / outgoing / internal
     let carrier_id: Many2One?
+    /// Server-side last-write timestamp. Used by `writeWithGuard` for OCC.
+    let write_date: Date?
 
     static let fields: [String] = [
         "id", "name", "partner_id", "scheduled_date", "date_done",
         "state", "origin", "carrier_tracking_ref", "picking_type_id",
-        "picking_type_code", "carrier_id"
+        "picking_type_code", "carrier_id", "write_date"
     ]
 
     init(from decoder: Decoder) throws {
@@ -32,6 +34,7 @@ struct StockPicking: Identifiable, Sendable, Hashable, Decodable {
         _carrier_tracking_ref = try c.decode(OdooOptionalString.self, forKey: .carrier_tracking_ref)
         scheduled_date = try Self.decodeOptionalDate(c, key: .scheduled_date)
         date_done = try Self.decodeOptionalDate(c, key: .date_done)
+        write_date = try Self.decodeOptionalDate(c, key: .write_date)
     }
 
     private static func decodeOptionalDate(
@@ -46,7 +49,8 @@ struct StockPicking: Identifiable, Sendable, Hashable, Decodable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, partner_id, scheduled_date, date_done, state, origin,
-             carrier_tracking_ref, picking_type_id, picking_type_code, carrier_id
+             carrier_tracking_ref, picking_type_id, picking_type_code, carrier_id,
+             write_date
     }
 
     var stateLabel: String {

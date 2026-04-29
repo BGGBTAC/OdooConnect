@@ -169,10 +169,11 @@ struct InventoryAdjustmentSheet: View {
         isApplying = true
         defer { isApplying = false }
         do {
-            _ = try await client.write(
+            _ = try await client.writeWithGuard(
                 model: "stock.quant",
-                ids: [quant.id],
-                values: ["inventory_quantity": .double(newQuantity)]
+                id: quant.id,
+                values: ["inventory_quantity": .double(newQuantity)],
+                lastSeenWriteDate: quant.write_date ?? .distantPast
             )
             let _: JSON = try await client.callKw(
                 model: "stock.quant",
@@ -181,6 +182,13 @@ struct InventoryAdjustmentSheet: View {
             )
             await onApplied()
             dismiss()
+        } catch OdooError.conflict {
+            // Server-wins: the quant already moved (someone else
+            // committed an adjustment / reservation / picking). Reload
+            // and tell the user to redo with fresh numbers.
+            self.error = "Der Bestand wurde gerade von einer anderen Stelle geändert. Die Liste wird neu geladen — bitte korrigiere noch einmal."
+            await loadQuants()
+            selectedQuant = nil
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

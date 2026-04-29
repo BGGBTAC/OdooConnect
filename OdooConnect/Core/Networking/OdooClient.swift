@@ -108,6 +108,42 @@ actor OdooClient {
         try await callKw(model: model, method: "write", args: [.array(ids.map { .int($0) }), .object(values)])
     }
 
+    /// Optimistic-concurrency write: re-reads `write_date` on the target
+    /// record and refuses the write if the server-side timestamp is
+    /// newer than `lastSeenWriteDate`. "Server wins" — the caller is
+    /// expected to reload and ask the user to redo the edit.
+    ///
+    /// This narrows but does not eliminate the race between read and
+    /// write: a third party could still slip a write in *between* this
+    /// guard check and the actual write call. Closing that hole would
+    /// need server-side conditional update logic. Worth the trade-off
+    /// for now — catches the realistic "two people on different devices"
+    /// case without bridge-module changes.
+    func writeWithGuard(
+        model: String,
+        id: Int,
+        values: [String: JSON],
+        lastSeenWriteDate: Date
+    ) async throws -> Bool {
+        let snapshot: [WriteDateDTO] = try await searchRead(
+            model: model,
+            domain: [.array([.string("id"), .string("="), .int(id)])],
+            fields: ["write_date"],
+            limit: 1
+        )
+        if let serverDate = snapshot.first?.write_date,
+           serverDate > lastSeenWriteDate.addingTimeInterval(0.5) {
+            // 0.5 s slack absorbs sub-second precision drift between
+            // Odoo's stored timestamp (PostgreSQL `timestamp`) and what
+            // the client decoded — Odoo stores microseconds but the
+            // JSON-RPC string format only emits whole seconds, so an
+            // unchanged record can decode 0–0.999 s "newer" than what
+            // we last saw.
+            throw OdooError.conflict(model: model, id: id)
+        }
+        return try await write(model: model, ids: [id], values: values)
+    }
+
     private static func rawCall(
         baseURL: URL,
         params: [String: JSON],
@@ -160,6 +196,21 @@ actor OdooClient {
             let message: String?
         }
     }
+}
+
+private struct WriteDateDTO: Decodable, Sendable {
+    let write_date: Date?
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let bool = try? c.decode(Bool.self, forKey: .write_date), bool == false {
+            self.write_date = nil
+        } else {
+            self.write_date = try? c.decode(Date.self, forKey: .write_date)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey { case write_date }
 }
 
 extension JSONDecoder {

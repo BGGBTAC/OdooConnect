@@ -7,6 +7,11 @@ enum OdooError: LocalizedError, Sendable {
     case server(code: Int, message: String, data: String?)
     case unexpectedResponse(String)
     case notAuthenticated
+    /// Optimistic-concurrency conflict: the record's `write_date` on the
+    /// server has moved since the client last read it, i.e. somebody
+    /// else saved changes in between. The caller is expected to surface
+    /// a "reload" UX rather than retry the write.
+    case conflict(model: String, id: Int)
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +27,8 @@ enum OdooError: LocalizedError, Sendable {
             return "Unexpected server response: \(detail)"
         case .notAuthenticated:
             return "Not signed in."
+        case .conflict:
+            return "Diese Daten wurden zwischenzeitlich von einer anderen Stelle geändert. Bitte aktualisiere die Ansicht und versuche es erneut."
         }
     }
 }
