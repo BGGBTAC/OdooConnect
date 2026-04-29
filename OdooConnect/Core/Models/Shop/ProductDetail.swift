@@ -31,6 +31,9 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
     let sale_ok: Bool
     let purchase_ok: Bool
     let active: Bool
+    /// "none" / "lot" / "serial". Drives whether stock adjustments and
+    /// pickings need a wizard to assign lot/serial numbers.
+    let tracking: String
 
     /// Base fields — safe for any Odoo install.
     static let baseFields: [String] = [
@@ -38,7 +41,7 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
         "default_code", "barcode", "description_sale",
         "uom_id", "categ_id", "product_tmpl_id",
         "product_template_attribute_value_ids",
-        "sale_ok", "purchase_ok", "active"
+        "sale_ok", "purchase_ok", "active", "tracking"
     ]
 
     /// Stock fields — only available when the `stock` module is installed.
@@ -87,6 +90,7 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
         sale_ok = try c.decodeIfPresent(Bool.self, forKey: .sale_ok) ?? true
         purchase_ok = try c.decodeIfPresent(Bool.self, forKey: .purchase_ok) ?? true
         active = try c.decodeIfPresent(Bool.self, forKey: .active) ?? true
+        tracking = (try? c.decodeIfPresent(String.self, forKey: .tracking)) ?? "none"
     }
 
     enum CodingKeys: String, CodingKey {
@@ -94,7 +98,14 @@ struct ProductDetail: Identifiable, Sendable, Hashable, Decodable {
              description_sale, uom_id, categ_id, product_tmpl_id,
              product_template_attribute_value_ids, image_512,
              qty_available, virtual_available, incoming_qty, outgoing_qty,
-             sale_ok, purchase_ok, active
+             sale_ok, purchase_ok, active, tracking
+    }
+
+    /// True when Odoo requires explicit lot/serial assignment for any
+    /// movement of this product. Adjustments and pickings then need a
+    /// wizard that the iOS app surfaces only as a hint.
+    var requiresLotOrSerial: Bool {
+        tracking == "lot" || tracking == "serial"
     }
 
     var uomSymbol: String { uom_id?.name ?? "Stk" }

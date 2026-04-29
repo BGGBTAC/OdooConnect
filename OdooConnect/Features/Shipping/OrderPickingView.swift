@@ -294,6 +294,14 @@ private struct PickLineRow: View {
                                 .truncationMode(.middle)
                         }
                     }
+                    if let trackingLabel = line.tracking.label {
+                        Label(trackingLabel, systemImage: "barcode.viewfinder")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .foregroundStyle(.white)
+                            .background(Theme.warning, in: .capsule)
+                    }
                     ProgressView(value: line.progress)
                         .tint(line.isComplete ? Theme.success : Theme.brand)
                         .padding(.top, 2)

@@ -8,6 +8,32 @@ import Observation
 /// variant) so the camera overlay can show "Red T-Shirt L · 1/2" while
 /// the user scans.
 struct PickableLine: Identifiable, Sendable, Equatable {
+    /// Mirrors `product.product.tracking` — "none", "lot" or "serial".
+    /// Used to surface a "needs lot/serial" badge for the picker and to
+    /// route the commit through a clearer error path when the line
+    /// can't be validated without a wizard.
+    enum Tracking: String, Sendable, Equatable {
+        case none, lot, serial
+
+        init(raw: String?) {
+            switch raw {
+            case "lot": self = .lot
+            case "serial": self = .serial
+            default: self = .none
+            }
+        }
+
+        var requiresAssignment: Bool { self != .none }
+
+        var label: String? {
+            switch self {
+            case .lot: return "Lot benötigt"
+            case .serial: return "Seriennr. benötigt"
+            case .none: return nil
+            }
+        }
+    }
+
     let moveId: Int
     let productId: Int
     let displayName: String
@@ -16,6 +42,7 @@ struct PickableLine: Identifiable, Sendable, Equatable {
     let demand: Double
     var picked: Double
     let uomName: String
+    let tracking: Tracking
 
     var id: Int { moveId }
     var remaining: Double { max(0, demand - picked) }
@@ -60,6 +87,7 @@ final class OrderPickingViewModel {
     var totalDemand: Double { lines.reduce(0) { $0 + $1.demand } }
     var totalPicked: Double { lines.reduce(0) { $0 + $1.picked } }
     var allPicked: Bool { !lines.isEmpty && lines.allSatisfy(\.isComplete) }
+    var hasTrackedLines: Bool { lines.contains { $0.tracking.requiresAssignment } }
 
     // MARK: - Loading
 
@@ -112,7 +140,8 @@ final class OrderPickingViewModel {
                     defaultCode: p?.default_code,
                     demand: dto.product_uom_qty,
                     picked: dto.quantity ?? 0,
-                    uomName: dto.product_uom?.name ?? "Stk"
+                    uomName: dto.product_uom?.name ?? "Stk",
+                    tracking: PickableLine.Tracking(raw: p?.tracking)
                 )
             }
         } catch {
@@ -235,6 +264,14 @@ final class OrderPickingViewModel {
                 if model == "stock.backorder.confirmation" {
                     return .requiresBackorder
                 }
+                // Lot/serial wizards usually surface as
+                // `stock.assign.serial`, `stock.tracking.confirmation`
+                // or `stock.production.lot.create`. Surface a specific
+                // hint instead of the generic model name when this
+                // picking contains tracked products.
+                if hasTrackedLines, model.contains("serial") || model.contains("lot") || model.contains("tracking") {
+                    return .completed("Diese Lieferung enthält Produkte mit Lot- oder Seriennummern-Pflicht. Bitte im Odoo-Web-Client abschließen.")
+                }
                 return .completed("Odoo erwartet zusätzlichen Wizard (\(model)).")
             }
             return .completed("Lieferung versendet.")
@@ -279,6 +316,8 @@ private struct PickingProductDTO: Decodable, Sendable {
     let display_name: String
     @OdooOptionalString var barcode: String?
     @OdooOptionalString var default_code: String?
+    /// "none" / "lot" / "serial". Drives the lot/serial badge.
+    @OdooOptionalString var tracking: String?
 
-    static let fields: [String] = ["id", "display_name", "barcode", "default_code"]
+    static let fields: [String] = ["id", "display_name", "barcode", "default_code", "tracking"]
 }

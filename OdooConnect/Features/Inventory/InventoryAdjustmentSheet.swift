@@ -39,6 +39,25 @@ struct InventoryAdjustmentSheet: View {
                 }
             }
 
+            if product.requiresLotOrSerial {
+                Section {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(product.tracking == "serial"
+                                 ? "Seriennummer-pflichtig"
+                                 : "Lot-pflichtig")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Bestandskorrekturen für dieses Produkt verlangen eine Lot/Serien-Zuweisung. Bitte direkt im Odoo-Web-Client durchführen — die App kann den Wizard nicht abschließen.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "barcode.viewfinder")
+                            .foregroundStyle(Theme.warning)
+                    }
+                }
+            }
+
             Section("Lagerort") {
                 if quants.isEmpty && !isLoading {
                     Text("Kein Bestand an internen Lagerorten. Bitte Standort zuerst in Odoo einrichten.")
@@ -94,7 +113,7 @@ struct InventoryAdjustmentSheet: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glassProminent)
-                    .disabled(isApplying)
+                    .disabled(isApplying || product.requiresLotOrSerial)
                 }
             }
         }
