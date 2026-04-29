@@ -109,10 +109,10 @@ struct DashboardView: View {
 
     private var revenueTitle: String {
         switch model.period {
-        case .today:  return "Umsatzverlauf heute"
-        case .last7:  return "Umsatz letzte 7 Tage"
-        case .last30: return "Umsatz letzte 30 Tage"
-        case .ytd:    return "Umsatz laufendes Jahr"
+        case .today: return "Umsatzverlauf heute"
+        case .last7: return "Umsatz letzte 7 Tage"
+        case .mtd:   return "Umsatz im Monat"
+        case .ytd:   return "Umsatz laufendes Jahr"
         }
     }
 

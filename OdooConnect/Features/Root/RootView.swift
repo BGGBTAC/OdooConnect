@@ -13,9 +13,23 @@ struct RootView: View {
     }
 }
 
+/// Applies `.sidebarAdaptable` only when the size class is regular
+/// (i.e. iPad). On iPhone the TabView keeps its default compact style.
+private struct AdaptiveTabStyle: ViewModifier {
+    let useSidebar: Bool
+    func body(content: Content) -> some View {
+        if useSidebar {
+            content.tabViewStyle(.sidebarAdaptable)
+        } else {
+            content
+        }
+    }
+}
+
 private struct MainTabs: View {
     @Environment(AppRouter.self) private var routerEnv
     @Environment(OrderWatcher.self) private var orderWatcher
+    @Environment(\.horizontalSizeClass) private var hSize
 
     var body: some View {
         @Bindable var router = routerEnv
@@ -45,7 +59,14 @@ private struct MainTabs: View {
                 NavigationStack { SettingsView() }
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
+        // Sidebar only on iPad (regular size class). On iPhone the
+        // .sidebarAdaptable style renders the iOS 26 Liquid Glass tab
+        // bar in its expanded "icon + label per tab" form, which with
+        // 8 tabs blows up to dominate the screen.
+        .modifier(AdaptiveTabStyle(useSidebar: hSize == .regular))
+        // iOS 26: collapse the bar to a hairline when the user
+        // scrolls a list/grid downwards, expand back on scroll-up.
+        .tabBarMinimizeBehavior(.onScrollDown)
         .tint(Theme.brand)
         .onChange(of: router.selectedTab) { _, tab in
             if tab == .orders { orderWatcher.clearUnread() }

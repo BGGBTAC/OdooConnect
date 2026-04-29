@@ -1,16 +1,16 @@
 import Foundation
 
 enum DashboardPeriod: String, CaseIterable, Identifiable, Sendable {
-    case today, last7, last30, ytd
+    case today, last7, mtd, ytd
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .today:  return "Heute"
-        case .last7:  return "7 Tage"
-        case .last30: return "30 Tage"
-        case .ytd:    return "Jahr"
+        case .today: return "Heute"
+        case .last7: return "7 Tage"
+        case .mtd:   return "Monat"
+        case .ytd:   return "Jahr"
         }
     }
 
@@ -18,10 +18,10 @@ enum DashboardPeriod: String, CaseIterable, Identifiable, Sendable {
     /// and client-side chart `unit`.
     var seriesInterval: SeriesInterval {
         switch self {
-        case .today:  return .hour
-        case .last7:  return .day
-        case .last30: return .day
-        case .ytd:    return .week
+        case .today: return .hour
+        case .last7: return .day
+        case .mtd:   return .day
+        case .ytd:   return .week
         }
     }
 
@@ -45,8 +45,10 @@ enum DashboardPeriod: String, CaseIterable, Identifiable, Sendable {
         case .last7:
             let start = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: now)) ?? now
             return Range(start: start, end: now)
-        case .last30:
-            let start = calendar.date(byAdding: .day, value: -29, to: calendar.startOfDay(for: now)) ?? now
+        case .mtd:
+            // First day of the current month at 00:00 — "Month to Date".
+            let comps = calendar.dateComponents([.year, .month], from: now)
+            let start = calendar.date(from: comps) ?? calendar.startOfDay(for: now)
             return Range(start: start, end: now)
         case .ytd:
             let comps = calendar.dateComponents([.year], from: now)

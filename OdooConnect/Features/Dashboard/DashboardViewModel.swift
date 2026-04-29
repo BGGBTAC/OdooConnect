@@ -4,7 +4,7 @@ import Observation
 @Observable
 @MainActor
 final class DashboardViewModel {
-    var period: DashboardPeriod = .last30 {
+    var period: DashboardPeriod = .mtd {
         didSet { if oldValue != period { Task { await loadPeriod() } } }
     }
 
@@ -41,8 +41,36 @@ final class DashboardViewModel {
         let range = period.range()
         let previous = period.previousRange()
 
-        async let revenue      = safeDelta { try await self.fetchRevenue(client, range: range) } previous: { try await self.fetchRevenue(client, range: previous) }
-        async let orders       = safeDeltaInt { try await self.fetchOrderCount(client, range: range) } previous: { try await self.fetchOrderCount(client, range: previous) }
+        // Primary KPIs: revenue + order count drive everything else and
+        // their failure usually indicates a real problem (network down,
+        // session expired). If they throw, keep the previously-rendered
+        // numbers and surface the error — wiping to zero leaves the user
+        // staring at a blank dashboard with no clue why, which is the
+        // bug pull-to-refresh hit when a stale Task got cancelled.
+        let revCurrent: Double
+        let revPrevious: Double
+        let ordCurrent: Int
+        let ordPrevious: Int
+        do {
+            async let _revCurrent  = self.fetchRevenue(client, range: range)
+            async let _revPrevious = self.fetchRevenue(client, range: previous)
+            async let _ordCurrent  = self.fetchOrderCount(client, range: range)
+            async let _ordPrevious = self.fetchOrderCount(client, range: previous)
+            revCurrent  = try await _revCurrent
+            revPrevious = try await _revPrevious
+            ordCurrent  = try await _ordCurrent
+            ordPrevious = try await _ordPrevious
+        } catch is CancellationError {
+            // Pull-to-refresh interrupted us. The next load will run.
+            return
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return
+        }
+
+        // Secondary fetches are individually resilient: a failure in
+        // any one shouldn't blank the whole board. They run in parallel
+        // and each gets a sensible empty default.
         async let newCustomers = safeDeltaInt { try await self.fetchNewCustomers(client, range: range) } previous: { try await self.fetchNewCustomers(client, range: previous) }
         async let cancelRate   = (try? self.fetchCancelRate(client, range: range)) ?? 0
         async let pending      = try? self.fetchPendingDeliveries(client)
@@ -56,12 +84,12 @@ final class DashboardViewModel {
         async let lowStockRows = (try? self.fetchLowStock(client)) ?? []
         async let recent       = (try? self.fetchRecentOrders(client)) ?? []
 
-        let rev = await revenue
-        let ord = await orders
+        let rev = StatDelta(current: revCurrent, previous: revPrevious)
+        let ord = StatDelta(current: Double(ordCurrent), previous: Double(ordPrevious))
 
         let aov: StatDelta = {
-            let cur = ord.current > 0 ? rev.current / ord.current : 0
-            let prev = ord.previous > 0 ? rev.previous / ord.previous : 0
+            let cur = ordCurrent > 0 ? revCurrent / Double(ordCurrent) : 0
+            let prev = ordPrevious > 0 ? revPrevious / Double(ordPrevious) : 0
             return StatDelta(current: cur, previous: prev)
         }()
 
@@ -82,15 +110,7 @@ final class DashboardViewModel {
         lowStock = await lowStockRows
         recentOrders = await recent
         lastRefresh = .now
-    }
-
-    private func safeDelta(
-        current: @Sendable () async throws -> Double,
-        previous: @Sendable () async throws -> Double
-    ) async -> StatDelta {
-        async let cur = (try? current()) ?? 0
-        async let prev = (try? previous()) ?? 0
-        return await StatDelta(current: cur, previous: prev)
+        self.error = nil
     }
 
     private func safeDeltaInt(
