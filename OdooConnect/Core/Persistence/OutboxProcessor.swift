@@ -78,14 +78,23 @@ actor OutboxProcessor {
         }
 
         let lines: [JSON] = snap.lines.map { line in
-            .array([
-                .int(0), .int(0),
-                .object([
-                    "product_id": .int(line.productId),
-                    "product_uom_qty": .double(line.quantity),
-                    "price_unit": .double(line.priceUnit)
+            var lineValues: [String: JSON] = [
+                "product_id": .int(line.productId),
+                "product_uom_qty": .double(line.quantity),
+                "price_unit": .double(line.priceUnit)
+            ]
+            if line.discount > 0 {
+                lineValues["discount"] = .double(line.discount)
+            }
+            // Empty taxIds -> let Odoo apply onchange defaults (legacy
+            // behaviour). Non-empty -> override with an explicit (6, 0, [ids])
+            // many2many command.
+            if !line.taxIds.isEmpty {
+                lineValues["tax_id"] = .array([
+                    .array([.int(6), .int(0), .array(line.taxIds.map { .int($0) })])
                 ])
-            ])
+            }
+            return .array([.int(0), .int(0), .object(lineValues)])
         }
         var values: [String: JSON] = [
             "partner_id": .int(snap.partnerId),
@@ -95,6 +104,9 @@ actor OutboxProcessor {
         if snap.currencyId > 0 {
             values["currency_id"] = .int(snap.currencyId)
         }
+        if let carrierId = snap.carrierId, carrierId > 0 {
+            values["carrier_id"] = .int(carrierId)
+        }
         return try await client.create(model: "sale.order", values: values)
     }
 }
@@ -103,14 +115,22 @@ private struct DraftSnapshot: Sendable {
     let id: UUID
     let partnerId: Int
     let currencyId: Int
+    let carrierId: Int?
     let lines: [LineSnapshot]
 
     init(draft: DraftQuote) {
         self.id = draft.id
         self.partnerId = draft.partnerId
         self.currencyId = draft.currencyId
+        self.carrierId = draft.carrierId
         self.lines = draft.lines.map {
-            LineSnapshot(productId: $0.productId, quantity: $0.quantity, priceUnit: $0.priceUnit)
+            LineSnapshot(
+                productId: $0.productId,
+                quantity: $0.quantity,
+                priceUnit: $0.priceUnit,
+                discount: $0.discount,
+                taxIds: $0.taxIds
+            )
         }
     }
 }
@@ -119,6 +139,8 @@ private struct LineSnapshot: Sendable {
     let productId: Int
     let quantity: Double
     let priceUnit: Double
+    let discount: Double
+    let taxIds: [Int]
 }
 
 private struct ExistingOrderDTO: Decodable, Sendable {
