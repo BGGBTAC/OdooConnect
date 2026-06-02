@@ -28,9 +28,22 @@ import Foundation
         return draft.id
     }
 
+    // Return only Sendable values across the actor boundary — DraftQuote
+    // (a @Model class) is not Sendable, so we never hand it back to the test.
+
     @MainActor
-    private func allDrafts(_ container: ModelContainer) throws -> [DraftQuote] {
-        try container.mainContext.fetch(FetchDescriptor<DraftQuote>())
+    private func draftCount(_ container: ModelContainer) throws -> Int {
+        try container.mainContext.fetchCount(FetchDescriptor<DraftQuote>())
+    }
+
+    @MainActor
+    private func summary(
+        _ container: ModelContainer,
+        id: UUID
+    ) throws -> (attempts: Int, status: DraftStatus, hasError: Bool)? {
+        let all = try container.mainContext.fetch(FetchDescriptor<DraftQuote>())
+        guard let draft = all.first(where: { $0.id == id }) else { return nil }
+        return (draft.attempts, draft.status, draft.lastError != nil)
     }
 
     @Test func existingOrderFound_doesNotCreate_andDeletesDraft() async throws {
@@ -43,7 +56,7 @@ import Foundation
         await proc.process(client: fake)
 
         #expect(fake.count(model: "sale.order", method: "create") == 0)
-        #expect(try await allDrafts(container).isEmpty)
+        #expect(try await draftCount(container) == 0)
     }
 
     @Test func noExisting_createsOnce_andDeletesDraft() async throws {
@@ -57,7 +70,7 @@ import Foundation
         await proc.process(client: fake)
 
         #expect(fake.count(model: "sale.order", method: "create") == 1)
-        #expect(try await allDrafts(container).isEmpty)
+        #expect(try await draftCount(container) == 0)
     }
 
     @Test func createThrows_incrementsAttempts_andMarksFailed() async throws {
@@ -70,11 +83,10 @@ import Foundation
         let proc = OutboxProcessor(modelContainer: container)
         await proc.process(client: fake)
 
-        let drafts = try await allDrafts(container)
-        let draft = try #require(drafts.first { $0.id == id })
-        #expect(draft.attempts == 1)
-        #expect(draft.status == .failed)
-        #expect(draft.lastError != nil)
+        let s = try await summary(container, id: id)
+        #expect(s?.attempts == 1)
+        #expect(s?.status == .failed)
+        #expect(s?.hasError == true)
     }
 
     @Test func deadLetteredDraft_isSkippedEntirely() async throws {
@@ -88,6 +100,6 @@ import Foundation
         // The fetch predicate excludes attempts >= maxAttempts, so the
         // processor never even searches for it.
         #expect(fake.calls.isEmpty)
-        #expect(try await allDrafts(container).count == 1)
+        #expect(try await draftCount(container) == 1)
     }
 }
