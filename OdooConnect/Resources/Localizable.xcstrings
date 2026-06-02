@@ -41,6 +41,12 @@
         }
       }
     },
+    "„%@“ wurde noch nicht mit Odoo synchronisiert und kann nicht wiederhergestellt werden." : {
+
+    },
+    "%" : {
+
+    },
     "%.0f" : {
       "localizations" : {
         "en" : {
@@ -269,6 +275,9 @@
         }
       }
     },
+    "Abmelden?" : {
+
+    },
     "Aktionen" : {
       "localizations" : {
         "en" : {
@@ -349,6 +358,9 @@
         }
       }
     },
+    "Anpassen" : {
+
+    },
     "Anzahl" : {
       "localizations" : {
         "en" : {
@@ -418,6 +430,9 @@
           }
         }
       }
+    },
+    "Auswahl leeren (Odoo-Default verwenden)" : {
+
     },
     "Auswertungen" : {
       "localizations" : {
@@ -520,6 +535,9 @@
         }
       }
     },
+    "Bereich" : {
+
+    },
     "Beschreibung" : {
       "localizations" : {
         "en" : {
@@ -549,6 +567,9 @@
           }
         }
       }
+    },
+    "Bestand anpassen?" : {
+
     },
     "Bestand für ${productQuery}" : {
       "localizations" : {
@@ -589,6 +610,9 @@
           }
         }
       }
+    },
+    "Bestandskorrekturen für dieses Produkt verlangen eine Lot/Serien-Zuweisung. Bitte direkt im Odoo-Web-Client durchführen — die App kann den Wizard nicht abschließen." : {
+
     },
     "Bestätigte Bestellungen nach Rechnungsstatus" : {
       "localizations" : {
@@ -740,6 +764,15 @@
         }
       }
     },
+    "Die Lagermenge wird in Odoo sofort gebucht." : {
+
+    },
+    "Die Ware wird in Odoo sofort zwischen den Lagerorten gebucht." : {
+
+    },
+    "Dieser Schritt bucht den Warenausgang in Odoo und kann nicht rückgängig gemacht werden." : {
+
+    },
     "Du hast Benachrichtigungen für OdooCompanion deaktiviert. Aktiviere sie in den iOS-Einstellungen, um neue Bestellungen zu erhalten." : {
       "localizations" : {
         "en" : {
@@ -749,6 +782,9 @@
           }
         }
       }
+    },
+    "Du wirst von diesem Odoo-Server abgemeldet. Nicht synchronisierte Entwürfe bleiben lokal erhalten." : {
+
     },
     "Eine Bestellung heute, von %@." : {
       "localizations" : {
@@ -800,6 +836,9 @@
         }
       }
     },
+    "Entwurf löschen?" : {
+
+    },
     "Erneut" : {
       "localizations" : {
         "en" : {
@@ -819,6 +858,9 @@
           }
         }
       }
+    },
+    "Es sind keine Sale-Steuern in diesem Odoo-System konfiguriert." : {
+
     },
     "Fehler" : {
       "localizations" : {
@@ -1091,6 +1133,9 @@
         }
       }
     },
+    "Keine Nachrichten" : {
+
+    },
     "Keine Produkte" : {
       "localizations" : {
         "en" : {
@@ -1100,6 +1145,9 @@
           }
         }
       }
+    },
+    "Keine Steuern" : {
+
     },
     "Keine Treffer" : {
       "localizations" : {
@@ -1170,6 +1218,9 @@
           }
         }
       }
+    },
+    "Kunde oder Betreff" : {
+
     },
     "Kunde oder Nummer" : {
       "localizations" : {
@@ -1251,6 +1302,9 @@
         }
       }
     },
+    "Leere Auswahl = Odoo verwendet seine Default-Steuern automatisch beim Speichern." : {
+
+    },
     "Letzte Bestellungen" : {
       "localizations" : {
         "en" : {
@@ -1270,6 +1324,9 @@
           }
         }
       }
+    },
+    "Lieferung wirklich als versendet markieren?" : {
+
     },
     "Liest den heutigen Umsatz aus Odoo vor (bestätigte Bestellungen seit Mitternacht)." : {
       "localizations" : {
@@ -1311,6 +1368,9 @@
         }
       }
     },
+    "Lokaler Speicher konnte nicht geöffnet werden. Neue Entwürfe gehen beim Beenden der App verloren." : {
+
+    },
     "Löschen" : {
       "localizations" : {
         "en" : {
@@ -1320,6 +1380,9 @@
           }
         }
       }
+    },
+    "Lot-pflichtig" : {
+
     },
     "Manuell mit API-Key" : {
       "localizations" : {
@@ -1456,6 +1519,9 @@
           }
         }
       }
+    },
+    "Netto vor Steuern" : {
+
     },
     "Neu" : {
       "localizations" : {
@@ -1627,6 +1693,9 @@
         }
       }
     },
+    "Optional — wird auf den Auftrag geschrieben." : {
+
+    },
     "Pick this order" : {
       "localizations" : {
         "en" : {
@@ -1686,6 +1755,9 @@
           }
         }
       }
+    },
+    "Posteingang" : {
+
     },
     "Preis" : {
       "localizations" : {
@@ -1788,6 +1860,9 @@
         }
       }
     },
+    "Rabatt %" : {
+
+    },
     "Rechnungen" : {
       "localizations" : {
         "en" : {
@@ -1837,6 +1912,9 @@
           }
         }
       }
+    },
+    "Seriennummer-pflichtig" : {
+
     },
     "Server" : {
       "localizations" : {
@@ -1908,6 +1986,9 @@
         }
       }
     },
+    "Start" : {
+
+    },
     "Status" : {
       "localizations" : {
         "en" : {
@@ -1927,6 +2008,15 @@
           }
         }
       }
+    },
+    "Steuern" : {
+
+    },
+    "Steuern suchen" : {
+
+    },
+    "Steuern werden von Odoo nach den hier hinterlegten Steuersätzen beim Speichern berechnet." : {
+
     },
     "Suchergebnisse" : {
       "localizations" : {
@@ -2109,6 +2199,12 @@
         }
       }
     },
+    "Umlagerung ausführen?" : {
+
+    },
+    "Umlagerungen für dieses Produkt verlangen eine Lot/Serien-Zuweisung. Bitte direkt im Odoo-Web-Client durchführen — die App kann den Wizard nicht abschließen." : {
+
+    },
     "Umsatz" : {
       "localizations" : {
         "en" : {
@@ -2200,6 +2296,9 @@
         }
       }
     },
+    "Verfügbare Steuern" : {
+
+    },
     "Vergleich:" : {
       "localizations" : {
         "en" : {
@@ -2209,6 +2308,9 @@
           }
         }
       }
+    },
+    "Verkauf" : {
+
     },
     "Verkauf, Lager, Lieferung & Inventur — direkt vom iPhone und iPad." : {
       "localizations" : {
@@ -2269,6 +2371,9 @@
           }
         }
       }
+    },
+    "Versender entfernen" : {
+
     },
     "Versender wählen" : {
       "localizations" : {

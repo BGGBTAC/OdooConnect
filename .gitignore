@@ -21,3 +21,9 @@ Package.resolved
 # Secrets
 *.env
 secrets.plist
+
+# Local code index (codegraph)
+.codegraph/
+
+# App icon source (already copied into Assets.xcassets/AppIcon.appiconset)
+OdooConnect_AppIcon_iOS_Orange_1024.png

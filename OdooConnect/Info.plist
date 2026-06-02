@@ -21,6 +21,8 @@
     <string>OdooCompanion</string>
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.business</string>
     <key>CFBundleShortVersionString</key>
     <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>

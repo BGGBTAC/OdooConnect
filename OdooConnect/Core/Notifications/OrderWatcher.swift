@@ -212,8 +212,10 @@ final class OrderWatcher {
         let dtos: [MailMessageDTO] = (try? await client.searchRead(
             model: "mail.message",
             domain: [
-                .array([.string("message_type"), .string("in"), .array([.string("email"), .string("comment")])]),
+                // Incoming customer emails only — see InboxViewModel.customerDomain.
+                .array([.string("message_type"), .string("="), .string("email")]),
                 .array([.string("author_id.partner_share"), .string("="), .bool(true)]),
+                .array([.string("author_id.customer_rank"), .string(">"), .int(0)]),
                 .array([.string("date"), .string(">"), .string(watermark)])
             ],
             fields: MailMessageDTO.fields,
@@ -267,8 +269,9 @@ final class OrderWatcher {
         let latest: [MailMessageDTO]? = try? await client.searchRead(
             model: "mail.message",
             domain: [
-                .array([.string("message_type"), .string("in"), .array([.string("email"), .string("comment")])]),
-                .array([.string("author_id.partner_share"), .string("="), .bool(true)])
+                .array([.string("message_type"), .string("="), .string("email")]),
+                .array([.string("author_id.partner_share"), .string("="), .bool(true)]),
+                .array([.string("author_id.customer_rank"), .string(">"), .int(0)])
             ],
             fields: MailMessageDTO.fields,
             limit: 1,
