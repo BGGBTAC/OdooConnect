@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_odooconnect_oauth_handoff_none,odooconnect.oauth.handoff.none,model_odooconnect_oauth_handoff,,0,0,0,0

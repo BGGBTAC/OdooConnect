@@ -14,10 +14,9 @@ import SwiftData
 ///   lost) finds the existing record instead of creating a duplicate.
 @ModelActor
 actor OutboxProcessor {
-    private static let maxAttempts = 5
     private var isProcessing = false
 
-    func process(client: OdooClient) async {
+    func process(client: any OdooReadWriting) async {
         guard !isProcessing else { return }
         isProcessing = true
         defer { isProcessing = false }
@@ -25,7 +24,7 @@ actor OutboxProcessor {
         let pending = DraftStatus.pending.rawValue
         let sending = DraftStatus.sending.rawValue
         let failed = DraftStatus.failed.rawValue
-        let max = Self.maxAttempts
+        let max = DraftQuote.maxAttempts
         let descriptor = FetchDescriptor<DraftQuote>(
             predicate: #Predicate { draft in
                 draft.statusRaw == pending ||
@@ -41,7 +40,7 @@ actor OutboxProcessor {
         }
     }
 
-    private func pushById(_ id: PersistentIdentifier, using client: OdooClient) async {
+    private func pushById(_ id: PersistentIdentifier, using client: any OdooReadWriting) async {
         guard let draft = modelContext.model(for: id) as? DraftQuote else { return }
         draft.statusRaw = DraftStatus.sending.rawValue
         let snapshot = DraftSnapshot(draft: draft)
@@ -65,37 +64,22 @@ actor OutboxProcessor {
         }
     }
 
-    private func pushOrFindExisting(_ snap: DraftSnapshot, using client: OdooClient) async throws -> Int {
+    private func pushOrFindExisting(_ snap: DraftSnapshot, using client: any OdooReadWriting) async throws -> Int {
         let ref = snap.id.uuidString
         let existing: [ExistingOrderDTO] = try await client.searchRead(
             model: "sale.order",
             domain: [.array([.string("client_order_ref"), .string("="), .string(ref)])],
             fields: ["id"],
-            limit: 1
+            limit: 1,
+            offset: 0,
+            order: nil,
+            as: ExistingOrderDTO.self
         )
         if let found = existing.first {
             return found.id
         }
 
-        let lines: [JSON] = snap.lines.map { line in
-            var lineValues: [String: JSON] = [
-                "product_id": .int(line.productId),
-                "product_uom_qty": .double(line.quantity),
-                "price_unit": .double(line.priceUnit)
-            ]
-            if line.discount > 0 {
-                lineValues["discount"] = .double(line.discount)
-            }
-            // Empty taxIds -> let Odoo apply onchange defaults (legacy
-            // behaviour). Non-empty -> override with an explicit (6, 0, [ids])
-            // many2many command.
-            if !line.taxIds.isEmpty {
-                lineValues["tax_id"] = .array([
-                    .array([.int(6), .int(0), .array(line.taxIds.map { .int($0) })])
-                ])
-            }
-            return .array([.int(0), .int(0), .object(lineValues)])
-        }
+        let lines: [JSON] = snap.lines.map { Self.makeLineValues($0) }
         var values: [String: JSON] = [
             "partner_id": .int(snap.partnerId),
             "order_line": .array(lines),
@@ -108,6 +92,32 @@ actor OutboxProcessor {
             values["carrier_id"] = .int(carrierId)
         }
         return try await client.create(model: "sale.order", values: values)
+    }
+
+    /// Builds one `(0, 0, {...})` create command for a sale.order.line. Pure +
+    /// `internal` so the payload shape can be unit-tested. `price_unit` is sent
+    /// ONLY when the rep manually overrode it; otherwise it is omitted so Odoo
+    /// computes the price from the partner pricelist (price_unit is a
+    /// precompute=True stored-computed field on sale.order.line).
+    static func makeLineValues(_ line: LineSnapshot) -> JSON {
+        var lineValues: [String: JSON] = [
+            "product_id": .int(line.productId),
+            "product_uom_qty": .double(line.quantity)
+        ]
+        if line.priceOverridden {
+            lineValues["price_unit"] = .double(line.priceUnit)
+        }
+        if line.discount > 0 {
+            lineValues["discount"] = .double(line.discount)
+        }
+        // Empty taxIds -> let Odoo apply onchange defaults. Non-empty ->
+        // override with an explicit (6, 0, [ids]) many2many command.
+        if !line.taxIds.isEmpty {
+            lineValues["tax_id"] = .array([
+                .array([.int(6), .int(0), .array(line.taxIds.map { .int($0) })])
+            ])
+        }
+        return .array([.int(0), .int(0), .object(lineValues)])
     }
 }
 
@@ -129,18 +139,20 @@ private struct DraftSnapshot: Sendable {
                 quantity: $0.quantity,
                 priceUnit: $0.priceUnit,
                 discount: $0.discount,
-                taxIds: $0.taxIds
+                taxIds: $0.taxIds,
+                priceOverridden: $0.priceOverridden
             )
         }
     }
 }
 
-private struct LineSnapshot: Sendable {
+struct LineSnapshot: Sendable {
     let productId: Int
     let quantity: Double
     let priceUnit: Double
     let discount: Double
     let taxIds: [Int]
+    let priceOverridden: Bool
 }
 
 private struct ExistingOrderDTO: Decodable, Sendable {

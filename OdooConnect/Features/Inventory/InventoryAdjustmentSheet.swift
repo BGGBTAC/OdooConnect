@@ -13,6 +13,7 @@ struct InventoryAdjustmentSheet: View {
     @State private var isApplying = false
     @State private var error: String?
     @State private var showingTransfer = false
+    @State private var showApplyDialog = false
 
     var body: some View {
         Form {
@@ -102,7 +103,7 @@ struct InventoryAdjustmentSheet: View {
 
                 Section {
                     Button {
-                        Task { await apply() }
+                        showApplyDialog = true
                     } label: {
                         HStack {
                             if isApplying { ProgressView() }
@@ -142,6 +143,14 @@ struct InventoryAdjustmentSheet: View {
             .presentationDetents([.medium, .large])
         }
         .errorAlert(error: $error)
+        .destructiveConfirm(
+            "Bestand anpassen?",
+            isPresented: $showApplyDialog,
+            confirmLabel: "Anpassen",
+            message: "Die Lagermenge wird in Odoo sofort gebucht."
+        ) {
+            Task { await apply() }
+        }
     }
 
     private func loadQuants() async {

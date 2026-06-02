@@ -11,6 +11,7 @@ struct ShipmentDetailView: View {
     @State private var error: String?
     @State private var info: String?
     @State private var showingBackorderSheet = false
+    @State private var showValidateDialog = false
 
     var body: some View {
         List {
@@ -92,7 +93,7 @@ struct ShipmentDetailView: View {
                         .foregroundStyle(Theme.brand)
 
                         Button {
-                            Task { await validate(picking) }
+                            showValidateDialog = true
                         } label: {
                             HStack {
                                 if isValidating { ProgressView() }
@@ -121,6 +122,14 @@ struct ShipmentDetailView: View {
         .overlay { if isLoading && picking == nil { ProgressView() } }
         .errorAlert(error: $error)
         .infoAlert(message: $info)
+        .destructiveConfirm(
+            "Lieferung wirklich als versendet markieren?",
+            isPresented: $showValidateDialog,
+            confirmLabel: "Als versendet markieren",
+            message: "Dieser Schritt bucht den Warenausgang in Odoo und kann nicht rückgängig gemacht werden."
+        ) {
+            if let picking { Task { await validate(picking) } }
+        }
         .sheet(isPresented: $showingBackorderSheet) {
             if let picking {
                 BackorderConfirmationSheet(

@@ -20,6 +20,14 @@ final class OrderWatcher {
     private let notifiedOrderIdsKey = "orderWatcher.notifiedOrderIds"
     private let maxRememberedNotificationIds = 200
     private let unreadCountKey = "orderWatcher.unreadCount"
+    private let lastSeenMessageDateKey = "orderWatcher.lastSeenMessageDate"
+    private let notifiedMessageIdsKey = "orderWatcher.notifiedMessageIds"
+    private let messageUnreadCountKey = "orderWatcher.messageUnreadCount"
+    static let messageThreadIdentifier = "new-messages"
+
+    /// Unread customer-message count for the Posteingang tab badge. Stored
+    /// (observable) so the badge updates live; mirrored to UserDefaults.
+    var messageUnread: Int = 0
 
     var notificationsEnabled: Bool {
         UserDefaults.standard.bool(forKey: "orderWatcher.enabled")
@@ -27,6 +35,7 @@ final class OrderWatcher {
 
     init(auth: AuthManager) {
         self.auth = auth
+        self.messageUnread = UserDefaults.standard.integer(forKey: messageUnreadCountKey)
         Self.registerCategories()
     }
 
@@ -71,6 +80,23 @@ final class OrderWatcher {
             let delivered = await center.deliveredNotifications()
             let ids = delivered
                 .filter { $0.request.content.threadIdentifier == Self.threadIdentifier }
+                .map(\.request.identifier)
+            if !ids.isEmpty {
+                center.removeDeliveredNotifications(withIdentifiers: ids)
+            }
+        }
+    }
+
+    /// Called when the user opens the Posteingang — clears the message badge
+    /// and drops the delivered message-notification group.
+    func clearMessageUnread() {
+        messageUnread = 0
+        UserDefaults.standard.set(0, forKey: messageUnreadCountKey)
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let delivered = await center.deliveredNotifications()
+            let ids = delivered
+                .filter { $0.request.content.threadIdentifier == Self.messageThreadIdentifier }
                 .map(\.request.identifier)
             if !ids.isEmpty {
                 center.removeDeliveredNotifications(withIdentifiers: ids)
@@ -135,8 +161,9 @@ final class OrderWatcher {
             if postedCount > 0 {
                 storeNotifiedOrderIds(rememberedIds)
             }
+            let messagePosted = await checkNewMessages(using: client)
             scheduleNextRefresh()
-            return postedCount
+            return postedCount + messagePosted
         } catch {
             scheduleNextRefresh()
             return 0
@@ -173,6 +200,98 @@ final class OrderWatcher {
             trigger: nil
         )
         try? await UNUserNotificationCenter.current().add(request)
+    }
+
+    // MARK: - Customer message polling (Posteingang)
+
+    private func checkNewMessages(using client: OdooClient) async -> Int {
+        guard let watermark = UserDefaults.standard.string(forKey: lastSeenMessageDateKey) else {
+            await seedMessageWatermarkIfNeeded(using: client)
+            return 0
+        }
+        let dtos: [MailMessageDTO] = (try? await client.searchRead(
+            model: "mail.message",
+            domain: [
+                .array([.string("message_type"), .string("in"), .array([.string("email"), .string("comment")])]),
+                .array([.string("author_id.partner_share"), .string("="), .bool(true)]),
+                .array([.string("date"), .string(">"), .string(watermark)])
+            ],
+            fields: MailMessageDTO.fields,
+            limit: 20,
+            order: "date asc, id asc"
+        )) ?? []
+
+        var remembered = notifiedMessageIds()
+        var posted = 0
+        for dto in dtos where !remembered.contains(dto.id) {
+            await postMessageNotification(for: InboxMessage(dto: dto))
+            remembered.append(dto.id)
+            posted += 1
+        }
+        if let newest = dtos.last {
+            UserDefaults.standard.set(
+                DateFormatter.odooDateTime.string(from: newest.date),
+                forKey: lastSeenMessageDateKey
+            )
+        }
+        if posted > 0 {
+            storeNotifiedMessageIds(remembered)
+        }
+        return posted
+    }
+
+    private func postMessageNotification(for message: InboxMessage) async {
+        messageUnread += 1
+        UserDefaults.standard.set(messageUnread, forKey: messageUnreadCountKey)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Neue Antwort von \(message.authorName)"
+        content.subtitle = message.recordName.isEmpty ? message.subject : message.recordName
+        let detail = message.preview.isEmpty ? message.subject : message.preview
+        content.body = detail.isEmpty ? "Neue Kundennachricht" : detail
+        content.sound = .default
+        let combined = UserDefaults.standard.integer(forKey: unreadCountKey) + messageUnread
+        content.badge = NSNumber(value: combined)
+        content.threadIdentifier = Self.messageThreadIdentifier
+        content.userInfo = ["inbox": true]
+        let request = UNNotificationRequest(
+            identifier: "msg.\(message.id)",
+            content: content,
+            trigger: nil
+        )
+        try? await UNUserNotificationCenter.current().add(request)
+    }
+
+    private func seedMessageWatermarkIfNeeded(using client: OdooClient) async {
+        guard UserDefaults.standard.string(forKey: lastSeenMessageDateKey) == nil else { return }
+        let latest: [MailMessageDTO]? = try? await client.searchRead(
+            model: "mail.message",
+            domain: [
+                .array([.string("message_type"), .string("in"), .array([.string("email"), .string("comment")])]),
+                .array([.string("author_id.partner_share"), .string("="), .bool(true)])
+            ],
+            fields: MailMessageDTO.fields,
+            limit: 1,
+            order: "date desc, id desc"
+        )
+        let stamp = latest?.first?.date ?? .now
+        UserDefaults.standard.set(
+            DateFormatter.odooDateTime.string(from: stamp),
+            forKey: lastSeenMessageDateKey
+        )
+    }
+
+    private func notifiedMessageIds() -> [Int] {
+        let raw = UserDefaults.standard.string(forKey: notifiedMessageIdsKey) ?? ""
+        return raw.split(separator: ",").compactMap { Int($0) }
+    }
+
+    private func storeNotifiedMessageIds(_ ids: [Int]) {
+        let bounded = Array(ids.suffix(maxRememberedNotificationIds))
+        UserDefaults.standard.set(
+            bounded.map(String.init).joined(separator: ","),
+            forKey: notifiedMessageIdsKey
+        )
     }
 
     private func seedNotificationWatermarkIfNeeded(using client: OdooClient?) async {

@@ -6,6 +6,7 @@ struct DashboardView: View {
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.scenePhase) private var scenePhase
     @State private var model = DashboardViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         ScrollView {
@@ -25,10 +26,12 @@ struct DashboardView: View {
                         currencyCode: code,
                         series: model.revenueSeries
                     )
+                    .redacted(reason: isInitialLoading ? .placeholder : [])
 
                     sectionLabel("Performance")
 
                     kpiGrid
+                        .redacted(reason: isInitialLoading ? .placeholder : [])
 
                     if !model.revenueSeries.isEmpty {
                         RevenueChartCard(
@@ -54,8 +57,7 @@ struct DashboardView: View {
                             router.openProduct(id: row.productId)
                         },
                         RecentOrdersCard(orders: model.recentOrders, currencyCode: code) { order in
-                            router.selectedTab = .orders
-                            router.ordersPath.append(AppRouter.OrderRoute.detail(order.id))
+                            router.openOrder(id: order.id)
                         }
                     )
                 }
@@ -70,28 +72,45 @@ struct DashboardView: View {
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Einstellungen")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 refreshChip
             }
         }
-        .refreshable { await model.load(using: auth.client) }
-        .task { await model.load(using: auth.client) }
+        .refreshable { await model.load(using: auth.client, companyCurrencyId: auth.companyCurrency.id) }
+        // Single owner for the initial + period-driven loads: .task(id:)
+        // re-fires on period change and SwiftUI cancels the prior body; the
+        // view model's in-flight guard coalesces everything else.
+        .task(id: model.period) {
+            await model.load(using: auth.client, companyCurrencyId: auth.companyCurrency.id)
+        }
         .onAppear {
-            // Tab-switch / NavigationStack pop reattaches the view but
-            // doesn't re-fire .task. Reload if the data is older than
-            // 30 s so coming back to the Dashboard always shows fresh
-            // numbers without forcing a manual pull-to-refresh.
-            let stale = model.lastRefresh.map { Date().timeIntervalSince($0) > 30 } ?? true
-            if stale {
-                Task { await model.load(using: auth.client) }
+            // Tab-switch / NavigationStack pop reattaches the view but doesn't
+            // re-fire .task. `lastRefresh` is nil until the first load lands,
+            // so this is a no-op on first appearance (no double-fire with
+            // .task) and only refreshes a stale board on re-appearance.
+            if !model.isLoading,
+               let last = model.lastRefresh,
+               Date().timeIntervalSince(last) > 30 {
+                Task { await model.load(using: auth.client, companyCurrencyId: auth.companyCurrency.id) }
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                Task { await model.load(using: auth.client) }
+                Task { await model.load(using: auth.client, companyCurrencyId: auth.companyCurrency.id) }
             }
         }
         .errorAlert(error: Bindable(model).error)
+        .sheet(isPresented: $showSettings) {
+            NavigationStack { SettingsView() }
+        }
     }
 
     @ViewBuilder
@@ -106,6 +125,12 @@ struct DashboardView: View {
     }
 
     private var code: String { auth.companyCurrency.code }
+
+    /// First load only — render card shells as skeletons so the layout
+    /// doesn't jump when data lands (vs. a bare spinner over empty cards).
+    private var isInitialLoading: Bool {
+        model.isLoading && model.lastRefresh == nil
+    }
 
     private var revenueTitle: String {
         switch model.period {
@@ -125,40 +150,35 @@ struct DashboardView: View {
         ) {
             StatCard(title: "Bestellungen",
                      systemImage: "cart.fill",
-                     tint: Theme.success,
                      delta: model.kpis.orderCount) {
                 Text("\(Int(model.kpis.orderCount.current))")
                     .contentTransition(.numericText(value: model.kpis.orderCount.current))
             }
             StatCard(title: "Ø Bestellwert",
                      systemImage: "basket.fill",
-                     tint: Theme.info,
                      delta: model.kpis.averageOrderValue) {
                 Text(model.kpis.averageOrderValue.current, format: .currency(code: code))
                     .contentTransition(.numericText(value: model.kpis.averageOrderValue.current))
             }
             StatCard(title: "Neue Kunden",
                      systemImage: "person.badge.plus",
-                     tint: Theme.info,
                      delta: model.kpis.newCustomers) {
                 Text("\(Int(model.kpis.newCustomers.current))")
                     .contentTransition(.numericText(value: model.kpis.newCustomers.current))
             }
             StatCard(title: "Stornoquote",
                      systemImage: "xmark.circle.fill",
-                     tint: model.kpis.cancelRate > 0.05 ? Theme.danger : Theme.slate) {
+                     tint: model.kpis.cancelRate > 0.05 ? Theme.danger : nil) {
                 Text(model.kpis.cancelRate, format: .percent.precision(.fractionLength(0...1)))
                     .contentTransition(.numericText(value: model.kpis.cancelRate))
             }
             StatCard(title: "Angebote offen",
-                     systemImage: "doc.text",
-                     tint: Theme.slate) {
+                     systemImage: "doc.text") {
                 Text("\(model.kpis.openQuotes)")
                     .contentTransition(.numericText(value: Double(model.kpis.openQuotes)))
             }
             StatCard(title: "Lieferungen offen",
-                     systemImage: "shippingbox.fill",
-                     tint: Theme.warning) {
+                     systemImage: "shippingbox.fill") {
                 if let value = model.kpis.pendingDeliveries {
                     Text("\(value)")
                         .contentTransition(.numericText(value: Double(value)))
@@ -167,8 +187,7 @@ struct DashboardView: View {
                 }
             }
             StatCard(title: "Reorder fällig",
-                     systemImage: "exclamationmark.triangle.fill",
-                     tint: Theme.warning) {
+                     systemImage: "exclamationmark.triangle.fill") {
                 if let value = model.kpis.lowStockCount {
                     Text("\(value)")
                         .contentTransition(.numericText(value: Double(value)))
@@ -178,7 +197,7 @@ struct DashboardView: View {
             }
             StatCard(title: "Forderungen",
                      systemImage: "creditcard.fill",
-                     tint: model.kpis.outstandingReceivable > 0 ? Theme.danger : Theme.slate) {
+                     tint: model.kpis.outstandingReceivable > 0 ? Theme.danger : nil) {
                 Text(model.kpis.outstandingReceivable, format: .currency(code: code))
                     .contentTransition(.numericText(value: model.kpis.outstandingReceivable))
             }

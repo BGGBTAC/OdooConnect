@@ -112,7 +112,7 @@ struct ProductDetailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 18))
+        .contentCard(cornerRadius: 18)
     }
 
     @ViewBuilder
@@ -138,7 +138,7 @@ struct ProductDetailView: View {
                 .font(.system(size: 42))
                 .foregroundStyle(.tint)
                 .frame(width: 88, height: 88)
-                .glassEffect(.regular.tint(.accentColor.opacity(0.15)), in: .rect(cornerRadius: 14))
+                .background(Theme.brand.opacity(0.12), in: .rect(cornerRadius: 14))
         }
     }
 
@@ -183,7 +183,7 @@ struct ProductDetailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 18))
+        .contentCard(cornerRadius: 18)
     }
 
     private func stockCard(_ product: ProductDetail) -> some View {
@@ -198,7 +198,7 @@ struct ProductDetailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 18))
+        .contentCard(cornerRadius: 18)
     }
 
     @ViewBuilder
@@ -240,7 +240,7 @@ struct ProductDetailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 18))
+        .contentCard(cornerRadius: 18)
     }
 
     private func load() async {

@@ -15,14 +15,18 @@ import SwiftUI
 struct StatCard<Value: View>: View {
     let title: String
     let systemImage: String
-    let tint: Color
+    /// Optional semantic accent for the icon. `nil` (the default) keeps the
+    /// tile neutral — iOS 26 craft rule: don't give each KPI its own hue
+    /// ("rainbow dashboard"). Only pass a colour when it carries meaning
+    /// (e.g. danger when a metric is in the red).
+    let tint: Color?
     let delta: StatDelta?
     let value: () -> Value
 
     init(
         title: String,
         systemImage: String,
-        tint: Color,
+        tint: Color? = nil,
         delta: StatDelta? = nil,
         @ViewBuilder value: @escaping () -> Value
     ) {
@@ -49,14 +53,15 @@ struct StatCard<Value: View>: View {
         }
         .padding(Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: Radius.standard))
+        .contentCard(cornerRadius: Radius.standard)
     }
 
     private var titleRow: some View {
         HStack(spacing: Spacing.xs) {
             Image(systemName: systemImage)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(tint)
+                .foregroundStyle(tint ?? .secondary)
+                .symbolRenderingMode(.hierarchical)
                 .frame(width: 14, alignment: .leading)
             Text(title)
                 .font(.caption.weight(.semibold))

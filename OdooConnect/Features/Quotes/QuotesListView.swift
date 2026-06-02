@@ -26,6 +26,8 @@ struct QuotesListView: View {
     @State private var model = QuotesViewModel()
     @State private var editorMode: EditorMode?
     @State private var searchText = ""
+    @State private var draftPendingDeletion: DraftQuote?
+    @State private var showDeleteDialog = false
 
     var body: some View {
         List {
@@ -39,17 +41,22 @@ struct QuotesListView: View {
                         }
                         .buttonStyle(.plain)
                         .transition(rowTransition)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                withAnimation(.smooth) {
-                                    modelContext.delete(draft)
-                                    try? modelContext.save()
-                                }
+                                draftPendingDeletion = draft
+                                showDeleteDialog = true
                             } label: {
                                 Label("Löschen", systemImage: "trash")
                             }
                             if draft.status == .failed {
                                 Button {
+                                    // Reset before sync so a dead-lettered
+                                    // draft (attempts >= max) re-enters the
+                                    // outbox queue instead of being skipped.
+                                    draft.status = .pending
+                                    draft.attempts = 0
+                                    draft.lastError = nil
+                                    try? modelContext.save()
                                     Task { await draftSync.sync() }
                                 } label: {
                                     Label("Erneut", systemImage: "arrow.clockwise")
@@ -120,6 +127,23 @@ struct QuotesListView: View {
                 )
             }
         }
+        .confirmationDialog(
+            "Entwurf löschen?",
+            isPresented: $showDeleteDialog,
+            titleVisibility: .visible,
+            presenting: draftPendingDeletion
+        ) { draft in
+            Button("Löschen", role: .destructive) {
+                withAnimation(.smooth) {
+                    modelContext.delete(draft)
+                    try? modelContext.save()
+                }
+                draftPendingDeletion = nil
+            }
+            Button("Abbrechen", role: .cancel) { draftPendingDeletion = nil }
+        } message: { draft in
+            Text("„\(draft.partnerName)“ wurde noch nicht mit Odoo synchronisiert und kann nicht wiederhergestellt werden.")
+        }
     }
 
     private var filteredDrafts: [DraftQuote] {
@@ -183,7 +207,7 @@ private struct DraftRow: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(draft.total, format: .currency(code: draft.currencyCode))
                     .font(.headline.monospacedDigit())
-                StatusBadge(status: draft.status)
+                StatusBadge(draft: draft)
             }
         }
         .contentShape(Rectangle())
@@ -191,7 +215,9 @@ private struct DraftRow: View {
 }
 
 private struct StatusBadge: View {
-    let status: DraftStatus
+    let draft: DraftQuote
+    private var status: DraftStatus { draft.status }
+    private var isDead: Bool { draft.isDeadLettered }
 
     var body: some View {
         Label {
@@ -205,12 +231,13 @@ private struct StatusBadge: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
         .foregroundStyle(tint)
-        .glassEffect(.regular.tint(tint.opacity(0.18)), in: .capsule)
+        .glassEffect(.regular.tint(tint.opacity(isDead ? 0.28 : 0.18)), in: .capsule)
         .accessibilityLabel(label)
         .animation(.snappy, value: status)
     }
 
     private var label: String {
+        if isDead { return "Endgültig fehlgeschlagen" }
         switch status {
         case .pending: return "Wartet"
         case .sending: return "Wird gesendet"
@@ -220,6 +247,7 @@ private struct StatusBadge: View {
     }
 
     private var icon: String {
+        if isDead { return "xmark.octagon.fill" }
         switch status {
         case .pending: return "clock"
         case .sending: return "arrow.up.circle"
@@ -228,11 +256,13 @@ private struct StatusBadge: View {
         }
     }
 
+    // .failed shows orange (will retry); dead-lettered shows red (terminal).
     private var tint: Color {
+        if isDead { return .red }
         switch status {
         case .pending: return .secondary
         case .sending: return .blue
-        case .failed: return .red
+        case .failed: return .orange
         case .synced: return .green
         }
     }

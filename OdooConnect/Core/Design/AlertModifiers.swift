@@ -37,6 +37,24 @@ extension View {
             isDestructive: false
         ))
     }
+
+    /// A destructive confirmation dialog bound to a `Bool` source. Mirrors
+    /// the terseness of `errorAlert`/`infoAlert`. `action` runs only when the
+    /// user taps the destructive button; an explicit Cancel is provided.
+    func destructiveConfirm(
+        _ title: LocalizedStringKey,
+        isPresented: Binding<Bool>,
+        confirmLabel: LocalizedStringKey,
+        message: LocalizedStringKey,
+        action: @escaping () -> Void
+    ) -> some View {
+        confirmationDialog(title, isPresented: isPresented, titleVisibility: .visible) {
+            Button(confirmLabel, role: .destructive, action: action)
+            Button("Abbrechen", role: .cancel) { }
+        } message: {
+            Text(message)
+        }
+    }
 }
 
 private struct SourceAlertModifier: ViewModifier {

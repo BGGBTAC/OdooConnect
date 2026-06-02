@@ -12,6 +12,7 @@ struct SettingsView: View {
 
     @State private var notificationsOn: Bool = false
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
+    @State private var showSignOutDialog = false
 
     var body: some View {
         Form {
@@ -82,7 +83,7 @@ struct SettingsView: View {
                 }
             }
             Section {
-                Button("Abmelden", role: .destructive) { auth.signOut() }
+                Button("Abmelden", role: .destructive) { showSignOutDialog = true }
             }
             Section("Über") {
                 LabeledContent("App", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–")
@@ -92,6 +93,14 @@ struct SettingsView: View {
         .onAppear { notificationsOn = orderWatcher.notificationsEnabled }
         .task {
             notificationStatus = await orderWatcher.authorizationStatus()
+        }
+        .destructiveConfirm(
+            "Abmelden?",
+            isPresented: $showSignOutDialog,
+            confirmLabel: "Abmelden",
+            message: "Du wirst von diesem Odoo-Server abgemeldet. Nicht synchronisierte Entwürfe bleiben lokal erhalten."
+        ) {
+            auth.signOut()
         }
     }
 

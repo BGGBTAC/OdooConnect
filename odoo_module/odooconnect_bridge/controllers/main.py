@@ -2,7 +2,6 @@ import html
 import json
 import logging
 import secrets
-import time
 import urllib.parse
 
 from odoo import http
@@ -12,16 +11,27 @@ _logger = logging.getLogger(__name__)
 
 CALLBACK_SCHEME = "odooconnect"
 CODE_TTL_SECONDS = 120
-CODE_PARAM_PREFIX = "odooconnect.oauth."
+HANDOFF_MODEL = "odooconnect.oauth.handoff"
 
 
 class OdooConnectBridge(http.Controller):
     """Bridges a successful Odoo session into an API key the iOS app can store.
 
-    The custom-scheme callback intentionally carries only a one-time code and
-    the original state value. The iOS app exchanges that code over HTTPS at
-    /api/odooconnect/oauth_exchange, so the API key is never exposed in the
-    browser URL or custom-scheme URL.
+    Flow:
+      1. GET  /api/odooconnect/oauth_complete  (auth=user)
+         Renders a same-origin, CSRF-protected POST form. It mints NOTHING,
+         so the GET has no side effect and cannot be CSRF-forged into creating
+         API keys.
+      2. POST /api/odooconnect/oauth_mint      (auth=user, CSRF-protected)
+         Mints a fresh `rpc` API key, stores a single-use handoff keyed by
+         sha256(code) in a sudo-only model, and bounces to the app via the
+         custom URL scheme.
+      3. POST /api/odooconnect/oauth_exchange  (auth=public)
+         Redeems the one-time code for the API key over HTTPS.
+
+    The custom-scheme callback carries only a one-time code; the key never
+    appears in a browser/custom-scheme URL and is never persisted in plain
+    config storage.
     """
 
     @http.route(
@@ -33,6 +43,26 @@ class OdooConnectBridge(http.Controller):
         save_session=True,
     )
     def oauth_complete(self, **kwargs):
+        state = kwargs.get("state")
+        if not state:
+            return self._error_page("OAuth-State fehlt. Bitte die Anmeldung aus der App neu starten.")
+        # No side effect here — just render a same-origin form whose CSRF
+        # token a cross-site attacker cannot read (same-origin policy), so
+        # only this page can drive the key-minting POST below.
+        token = request.csrf_token(time_limit=600)
+        return self._mint_form_page(state=state, csrf_token=token)
+
+    @http.route(
+        "/api/odooconnect/oauth_mint",
+        type="http",
+        auth="user",
+        methods=["POST"],
+        save_session=True,
+    )
+    def oauth_mint(self, **kwargs):
+        # csrf defaults to True for a type="http" POST route, so Odoo's
+        # dispatcher has already rejected any request lacking a valid,
+        # session-bound csrf_token before reaching this handler.
         user = request.env.user
         state = kwargs.get("state")
         if not state:
@@ -54,15 +84,13 @@ class OdooConnectBridge(http.Controller):
             return self._error_page("API-Key war leer (interner Fehler).")
 
         code = secrets.token_urlsafe(32)
-        self._store_code(
-            code,
-            {
-                "api_key": api_key,
-                "uid": user.id,
-                "login": user.login,
-                "database": request.env.cr.dbname,
-                "expires_at": time.time() + CODE_TTL_SECONDS,
-            },
+        request.env[HANDOFF_MODEL].sudo().stash(
+            code=code,
+            api_key=api_key,
+            uid=user.id,
+            login=user.login,
+            database=request.env.cr.dbname,
+            ttl=CODE_TTL_SECONDS,
         )
 
         callback = f"{CALLBACK_SCHEME}://oauth-callback?" + urllib.parse.urlencode(
@@ -97,11 +125,12 @@ class OdooConnectBridge(http.Controller):
         if not isinstance(code, str) or not code:
             return self._json_error("OAuth-Code fehlt.", status=400)
 
-        stored = self._pop_code(code)
+        stored = request.env[HANDOFF_MODEL].sudo().redeem(code=code)
         if not stored:
-            return self._json_error("OAuth-Code ist ungueltig oder wurde bereits verwendet.", status=404)
-        if float(stored.get("expires_at") or 0) < time.time():
-            return self._json_error("OAuth-Code ist abgelaufen. Bitte Anmeldung erneut starten.", status=410)
+            return self._json_error(
+                "OAuth-Code ist ungueltig, abgelaufen oder wurde bereits verwendet.",
+                status=404,
+            )
 
         return self._json_response(
             {
@@ -125,40 +154,51 @@ class OdooConnectBridge(http.Controller):
             except TypeError:
                 return api_keys._generate(scope, name)
 
-    def _store_code(self, code, payload):
-        self._cleanup_expired_codes()
-        request.env["ir.config_parameter"].sudo().set_param(
-            f"{CODE_PARAM_PREFIX}{code}",
-            json.dumps(payload),
+    def _mint_form_page(self, state: str, csrf_token: str):
+        safe_state = html.escape(state, quote=True)
+        safe_token = html.escape(csrf_token, quote=True)
+        # `action="oauth_mint"` is relative to /api/odooconnect/oauth_complete,
+        # so it resolves to /api/odooconnect/oauth_mint and stays correct
+        # behind a reverse-proxy path prefix.
+        body = (
+            "<!DOCTYPE html>"
+            "<html lang='de'><head>"
+            "<meta charset='utf-8'>"
+            "<title>OdooCompanion</title>"
+            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+            "</head>"
+            "<body style=\"font-family:-apple-system,system-ui,sans-serif;"
+            "padding:32px;text-align:center;color:#1d1d1f;background:#fff\">"
+            "<h2 style='margin:0 0 12px;font-weight:700'>Anmeldung abschliessen</h2>"
+            "<p style='margin:0 0 18px;color:#444'>Du wirst zurueck zur App geleitet...</p>"
+            "<form id='mint' method='post' action='oauth_mint'>"
+            f"<input type='hidden' name='csrf_token' value='{safe_token}'>"
+            f"<input type='hidden' name='state' value='{safe_state}'>"
+            "<button type='submit' style='display:inline-block;padding:12px 22px;"
+            "background:#F87120;color:#fff;border:0;text-decoration:none;"
+            "border-radius:14px;font-weight:600;font-size:16px'>Weiter zur App</button>"
+            "</form>"
+            "<script>document.getElementById('mint').submit();</script>"
+            "</body></html>"
         )
-
-    def _pop_code(self, code):
-        params = request.env["ir.config_parameter"].sudo()
-        record = params.search([("key", "=", f"{CODE_PARAM_PREFIX}{code}")], limit=1)
-        if not record:
-            return None
-        raw = record.value
-        record.unlink()
-        try:
-            return json.loads(raw or "{}")
-        except ValueError:
-            return None
-
-    def _cleanup_expired_codes(self):
-        params = request.env["ir.config_parameter"].sudo()
-        records = params.search([("key", "like", f"{CODE_PARAM_PREFIX}%")])
-        now = time.time()
-        for record in records:
-            try:
-                payload = json.loads(record.value or "{}")
-            except ValueError:
-                record.unlink()
-                continue
-            if float(payload.get("expires_at") or 0) < now:
-                record.unlink()
+        return request.make_response(
+            body,
+            headers=[
+                ("Content-Type", "text/html; charset=utf-8"),
+                ("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"),
+                ("Pragma", "no-cache"),
+                ("X-Frame-Options", "DENY"),
+                ("Content-Security-Policy", "frame-ancestors 'none'"),
+                ("Referrer-Policy", "no-referrer"),
+            ],
+        )
 
     def _success_page(self, callback_url: str):
         safe_callback = html.escape(callback_url, quote=True)
+        # Build the JS string from a properly escaped JSON literal rather than
+        # Python repr(), so a future change to callback_url can't break out of
+        # the script context.
+        js_callback = json.dumps(callback_url)
         body = (
             "<!DOCTYPE html>"
             "<html lang='de'><head>"
@@ -175,8 +215,8 @@ class OdooConnectBridge(http.Controller):
             "style='display:inline-block;padding:12px 22px;background:#F87120;"
             "color:#fff;text-decoration:none;border-radius:14px;font-weight:600'>"
             "Zur App zurueck</a></p>"
-            f"<script>(function(){{ try {{ window.location.replace({callback_url!r}); }}"
-            f"catch(e){{}} setTimeout(function(){{ window.location.href = {callback_url!r}; }}, 200); }})();</script>"
+            f"<script>(function(){{ try {{ window.location.replace({js_callback}); }}"
+            f"catch(e){{}} setTimeout(function(){{ window.location.href = {js_callback}; }}, 200); }})();</script>"
             "</body></html>"
         )
         return request.make_response(

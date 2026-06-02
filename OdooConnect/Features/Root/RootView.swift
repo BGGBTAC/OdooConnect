@@ -2,14 +2,42 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AuthManager.self) private var auth
+    @Environment(StorageHealth.self) private var storageHealth
 
     var body: some View {
-        switch auth.state {
-        case .signedOut, .signingIn:
-            LoginView()
-        case .signedIn:
-            MainTabs()
+        Group {
+            switch auth.state {
+            case .signedOut, .signingIn:
+                LoginView()
+            case .signedIn:
+                MainTabs()
+            }
         }
+        .safeAreaInset(edge: .top) {
+            if storageHealth.isDegraded {
+                StorageDegradedBanner(reason: storageHealth.degradedReason)
+            }
+        }
+    }
+}
+
+/// Persistent warning shown when the app fell back to volatile storage.
+private struct StorageDegradedBanner: View {
+    let reason: String?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "externaldrive.badge.exclamationmark")
+            Text(reason ?? "Lokaler Speicher nicht verfügbar.")
+                .font(.footnote)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .foregroundStyle(.white)
+        .background(.red)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -33,43 +61,37 @@ private struct MainTabs: View {
 
     var body: some View {
         @Bindable var router = routerEnv
+        // iOS 26 IA: five top-level destinations for the floating Liquid
+        // Glass tab bar (HIG: 3–5). Verkauf + Lager are segmented hubs over
+        // the underlying lists; Settings moved off the bar into the Start
+        // toolbar; search lives minimized inside each list.
         TabView(selection: $router.selectedTab) {
-            Tab("Dashboard", systemImage: "chart.bar.fill", value: AppRouter.Tab.dashboard) {
+            Tab("Start", systemImage: "house.fill", value: AppRouter.Tab.start) {
                 NavigationStack { DashboardView() }
             }
-            Tab("Angebote", systemImage: "doc.text", value: AppRouter.Tab.quotes) {
-                NavigationStack(path: $router.quotesPath) { QuotesListView() }
+            Tab("Posteingang", systemImage: "tray.full.fill", value: AppRouter.Tab.inbox) {
+                InboxView()
             }
-            Tab("Bestellungen", systemImage: "cart", value: AppRouter.Tab.orders) {
-                NavigationStack(path: $router.ordersPath) { OrdersListView() }
+            .badge(orderWatcher.messageUnread)
+            Tab("Verkauf", systemImage: "cart.fill", value: AppRouter.Tab.sales) {
+                SalesHubView()
             }
-            Tab("Rechnungen", systemImage: "doc.plaintext", value: AppRouter.Tab.invoices) {
-                NavigationStack(path: $router.invoicesPath) { InvoicesListView() }
+            Tab("Lager", systemImage: "archivebox.fill", value: AppRouter.Tab.warehouse) {
+                WarehouseHubView()
             }
             Tab("Produkte", systemImage: "shippingbox.fill", value: AppRouter.Tab.products) {
                 NavigationStack(path: $router.productsPath) { ProductsListView() }
             }
-            Tab("Versand", systemImage: "truck.box.fill", value: AppRouter.Tab.shipping) {
-                NavigationStack(path: $router.shippingPath) { ShippingListView() }
-            }
-            Tab("Inventur", systemImage: "barcode.viewfinder", value: AppRouter.Tab.inventory) {
-                NavigationStack(path: $router.inventoryPath) { InventoryView() }
-            }
-            Tab("Einstellungen", systemImage: "gearshape", value: AppRouter.Tab.settings) {
-                NavigationStack { SettingsView() }
-            }
         }
-        // Sidebar only on iPad (regular size class). On iPhone the
-        // .sidebarAdaptable style renders the iOS 26 Liquid Glass tab
-        // bar in its expanded "icon + label per tab" form, which with
-        // 8 tabs blows up to dominate the screen.
+        // Sidebar on iPad (regular size class); floating glass tab bar on iPhone.
         .modifier(AdaptiveTabStyle(useSidebar: hSize == .regular))
-        // iOS 26: collapse the bar to a hairline when the user
-        // scrolls a list/grid downwards, expand back on scroll-up.
+        // iOS 26: collapse the bar to a hairline when the user scrolls a
+        // list/grid downwards, expand back on scroll-up.
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(Theme.brand)
         .onChange(of: router.selectedTab) { _, tab in
-            if tab == .orders { orderWatcher.clearUnread() }
+            if tab == .sales { orderWatcher.clearUnread() }
+            if tab == .inbox { orderWatcher.clearMessageUnread() }
         }
     }
 }

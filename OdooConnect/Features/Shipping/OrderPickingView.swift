@@ -330,7 +330,7 @@ private struct PickLineRow: View {
                 line.isComplete ? Theme.success.opacity(0.10) : Color.clear,
                 in: .rect(cornerRadius: Radius.standard)
             )
-            .glassEffect(.regular, in: .rect(cornerRadius: Radius.standard))
+            .contentCard(cornerRadius: Radius.standard)
         }
         .buttonStyle(.plain)
     }
@@ -364,7 +364,6 @@ private struct ScanFlashBanner: View {
         .padding(.vertical, Spacing.sm)
         .background(tint, in: .rect(cornerRadius: Radius.standard))
         .foregroundStyle(.white)
-        .shadow(color: tint.opacity(0.45), radius: 12, x: 0, y: 6)
     }
 
     private var tint: Color {

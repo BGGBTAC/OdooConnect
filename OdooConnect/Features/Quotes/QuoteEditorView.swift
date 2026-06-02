@@ -18,6 +18,9 @@ struct EditorLine: Identifiable, Sendable {
     var discount: Double
     var taxIds: [Int]
     var taxLabel: String
+    /// Set once the rep edits the price field; gates whether price_unit is
+    /// pushed to Odoo (vs. left to pricelist computation).
+    var priceOverridden: Bool
 
     init(
         id: UUID = UUID(),
@@ -27,7 +30,8 @@ struct EditorLine: Identifiable, Sendable {
         priceUnit: Double,
         discount: Double = 0,
         taxIds: [Int] = [],
-        taxLabel: String = ""
+        taxLabel: String = "",
+        priceOverridden: Bool = false
     ) {
         self.id = id
         self.productId = productId
@@ -37,6 +41,7 @@ struct EditorLine: Identifiable, Sendable {
         self.discount = discount
         self.taxIds = taxIds
         self.taxLabel = taxLabel
+        self.priceOverridden = priceOverridden
     }
 
     var subtotal: Double {
@@ -211,7 +216,15 @@ struct QuoteEditorView: View {
             HStack {
                 Text("Preis")
                 Spacer()
-                TextField("", value: line.priceUnit, format: .number)
+                TextField("", value: Binding(
+                    get: { line.wrappedValue.priceUnit },
+                    set: { newValue in
+                        line.wrappedValue.priceUnit = newValue
+                        // A manual edit pins the price; otherwise Odoo computes
+                        // it from the partner pricelist on create.
+                        line.wrappedValue.priceOverridden = true
+                    }
+                ), format: .number)
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.decimalPad)
                     .frame(maxWidth: 100)
@@ -273,7 +286,8 @@ struct QuoteEditorView: View {
                 priceUnit: line.priceUnit,
                 discount: line.discount,
                 taxIds: line.taxIds,
-                taxLabel: line.taxLabel
+                taxLabel: line.taxLabel,
+                priceOverridden: line.priceOverridden
             )
         }
     }
@@ -314,7 +328,8 @@ struct QuoteEditorView: View {
                 priceUnit: line.priceUnit,
                 discount: line.discount,
                 taxIds: line.taxIds,
-                taxLabel: line.taxLabel
+                taxLabel: line.taxLabel,
+                priceOverridden: line.priceOverridden
             ))
         }
 

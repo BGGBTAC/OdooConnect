@@ -18,6 +18,13 @@ enum Theme {
     static let danger  = Color(red: 239/255, green: 68/255,  blue: 68/255)   // crimson
     static let info    = Color(red: 59/255,  green: 130/255, blue: 246/255)  // sky
 
+    /// Opaque content-card fills. iOS 26 rule: Liquid Glass is reserved for
+    /// the navigation/control layer — content sits on solid system surfaces
+    /// that adapt to light/dark and pass Reduce-Transparency. Depth comes
+    /// from these grouped surfaces + the floating glass chrome, not shadows.
+    static let cardFill  = Color(uiColor: .secondarySystemBackground)
+    static let insetFill = Color(uiColor: .tertiarySystemBackground)
+
     /// Subtle radial wash used as the dashboard background veil.
     static let pageVeil = LinearGradient(
         colors: [brand.opacity(0.06), .clear],

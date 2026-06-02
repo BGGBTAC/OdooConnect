@@ -19,6 +19,7 @@ struct PeriodPickerPills: View {
         .overlay(
             Capsule().stroke(Theme.brand.opacity(0.18), lineWidth: 0.5)
         )
+        .sensoryFeedback(.selection, trigger: selection)
         .accessibilityElement(children: .contain)
     }
 
@@ -44,7 +45,6 @@ struct PeriodPickerPills: View {
                         Capsule()
                             .fill(Theme.brand)
                             .matchedGeometryEffect(id: "activePill", in: pillNS)
-                            .shadow(color: Theme.brand.opacity(0.35), radius: 8, x: 0, y: 4)
                     }
                 }
                 .contentShape(Capsule())

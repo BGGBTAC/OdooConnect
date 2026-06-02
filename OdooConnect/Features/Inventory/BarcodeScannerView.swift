@@ -95,19 +95,100 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
     }
 
     final class ScannerController: UIViewController {
+        enum CameraPermission { case authorized, needsPrompt, denied }
+
         var coordinator: Coordinator?
         private let session = AVCaptureSession()
         private var previewLayer: AVCaptureVideoPreviewLayer?
         private let reticle = CAShapeLayer()
+        private var sessionConfigured = false
 
         override func viewDidLoad() {
             super.viewDidLoad()
             view.backgroundColor = .black
-            configureSession()
+            requestAccessAndConfigure()
+        }
+
+        /// Pure, testable mapping from the raw AVFoundation status to the
+        /// three cases this controller acts on.
+        static func permission(for status: AVAuthorizationStatus) -> CameraPermission {
+            switch status {
+            case .authorized:           return .authorized
+            case .notDetermined:        return .needsPrompt
+            case .denied, .restricted:  return .denied
+            @unknown default:           return .denied
+            }
+        }
+
+        /// Gate session setup on camera authorization. A denied/restricted
+        /// camera previously left a silent black preview; now we render a
+        /// guidance overlay and notify the coordinator.
+        private func requestAccessAndConfigure() {
+            switch Self.permission(for: AVCaptureDevice.authorizationStatus(for: .video)) {
+            case .authorized:
+                configureSession()
+            case .needsPrompt:
+                AVCaptureDevice.requestAccess(for: .video) { granted in
+                    // The completion handler runs on an arbitrary queue.
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        if granted {
+                            self.configureSession()
+                            // viewWillAppear already fired before the user
+                            // answered the prompt, so start the session here.
+                            if self.sessionConfigured, !self.session.isRunning {
+                                let session = self.session
+                                Task.detached(priority: .userInitiated) {
+                                    session.startRunning()
+                                }
+                            }
+                        } else {
+                            self.showDeniedState()
+                        }
+                    }
+                }
+            case .denied:
+                showDeniedState()
+            }
+        }
+
+        /// Renders a permission-denied state with a deep-link into Settings
+        /// instead of an inscrutable black rectangle.
+        private func showDeniedState() {
+            coordinator?.onError("Kein Kamerazugriff. Bitte erlaube den Kamerazugriff in den Einstellungen.")
+
+            let label = UILabel()
+            label.text = "Kamerazugriff ist deaktiviert.\nBitte in den iOS-Einstellungen erlauben."
+            label.numberOfLines = 0
+            label.textAlignment = .center
+            label.textColor = .white
+            label.font = .preferredFont(forTextStyle: .body)
+
+            var config = UIButton.Configuration.filled()
+            config.title = "In Einstellungen öffnen"
+            let button = UIButton(configuration: config, primaryAction: UIAction { _ in
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            })
+
+            let stack = UIStackView(arrangedSubviews: [label, button])
+            stack.axis = .vertical
+            stack.spacing = 16
+            stack.alignment = .center
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                stack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                stack.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+                stack.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32)
+            ])
         }
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
+            guard sessionConfigured else { return }
             if !session.isRunning {
                 // startRunning() blocks for ~1–2s while the camera warms up,
                 // so it must run off the main actor. Detached because we
@@ -167,6 +248,8 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
             reticle.fillColor = UIColor.clear.cgColor
             reticle.lineWidth = 3
             view.layer.addSublayer(reticle)
+
+            sessionConfigured = true
         }
 
         private func layoutReticle() {

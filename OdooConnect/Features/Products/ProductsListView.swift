@@ -144,7 +144,7 @@ struct ProductTile: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .contentCard(cornerRadius: 16)
     }
 }
 

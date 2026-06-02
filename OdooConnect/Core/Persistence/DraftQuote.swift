@@ -46,6 +46,17 @@ final class DraftQuote {
         set { statusRaw = newValue.rawValue }
     }
 
+    /// Max automatic push attempts before a draft is dead-lettered. Single
+    /// source of truth — `OutboxProcessor`'s fetch predicate references this.
+    static let maxAttempts = 5
+
+    /// A failed draft that has exhausted its automatic retries. The outbox
+    /// no longer touches it; only an explicit retry (which resets `attempts`)
+    /// or re-saving it in the editor can revive it.
+    var isDeadLettered: Bool {
+        status == .failed && attempts >= Self.maxAttempts
+    }
+
     var total: Double {
         lines.reduce(0) { $0 + $1.subtotal }
     }
@@ -65,6 +76,10 @@ final class DraftLine {
     /// Cached human label for the chosen taxes ("MwSt 19%, …"), so the editor
     /// can show what's set without re-fetching `account.tax` each time.
     var taxLabel: String = ""
+    /// True only when the rep manually edited the unit price. When false the
+    /// outbox OMITS price_unit on create so Odoo computes it from the partner
+    /// pricelist (price_unit is a precompute=True stored-computed field).
+    var priceOverridden: Bool = false
     var quote: DraftQuote?
 
     init(
@@ -74,7 +89,8 @@ final class DraftLine {
         priceUnit: Double,
         discount: Double = 0,
         taxIds: [Int] = [],
-        taxLabel: String = ""
+        taxLabel: String = "",
+        priceOverridden: Bool = false
     ) {
         self.productId = productId
         self.productName = productName
@@ -83,6 +99,7 @@ final class DraftLine {
         self.discount = discount
         self.taxIds = taxIds
         self.taxLabel = taxLabel
+        self.priceOverridden = priceOverridden
     }
 
     /// Net subtotal *after* discount but before taxes — matches what Odoo

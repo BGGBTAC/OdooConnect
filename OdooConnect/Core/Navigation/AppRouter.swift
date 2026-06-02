@@ -2,22 +2,33 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// Single source of truth for cross-tab navigation. Each tab keeps its
-/// own `NavigationPath` so push state is preserved when the user
-/// switches tabs. Deep-link helpers like `openOrder(id:)` jump to the
-/// right tab and push the correct destination in one call.
+/// Single source of truth for cross-tab navigation.
+///
+/// iOS 26 IA: five top-level tabs (Start · Posteingang · Verkauf · Lager ·
+/// Produkte). The Verkauf and Lager tabs are *hubs* that segment over the
+/// underlying lists, so we keep one `NavigationPath` per underlying
+/// destination (push state survives tab + segment switches) plus a segment
+/// selector per hub. Deep-link helpers jump to the right tab, select the
+/// right segment, and push the destination in one call.
 @MainActor
 @Observable
 final class AppRouter {
     enum Tab: Hashable {
-        case dashboard
-        case quotes
-        case orders
-        case invoices
+        case start
+        case inbox
+        case sales
+        case warehouse
         case products
-        case shipping
-        case inventory
-        case settings
+    }
+
+    /// Sub-section of the Verkauf hub.
+    enum SalesSegment: Hashable, CaseIterable {
+        case quotes, orders, invoices
+    }
+
+    /// Sub-section of the Lager hub.
+    enum WarehouseSegment: Hashable, CaseIterable {
+        case shipping, inventory
     }
 
     enum OrderRoute: Hashable {
@@ -32,7 +43,10 @@ final class AppRouter {
         case detail(Int)
     }
 
-    var selectedTab: Tab = .dashboard
+    var selectedTab: Tab = .start
+    var salesSegment: SalesSegment = .quotes
+    var warehouseSegment: WarehouseSegment = .shipping
+
     var quotesPath = NavigationPath()
     var ordersPath = NavigationPath()
     var invoicesPath = NavigationPath()
@@ -40,8 +54,13 @@ final class AppRouter {
     var shippingPath = NavigationPath()
     var inventoryPath = NavigationPath()
 
+    func openInbox() {
+        selectedTab = .inbox
+    }
+
     func openOrder(id: Int) {
-        selectedTab = .orders
+        selectedTab = .sales
+        salesSegment = .orders
         ordersPath = NavigationPath()
         ordersPath.append(OrderRoute.detail(id))
     }
@@ -53,7 +72,8 @@ final class AppRouter {
     }
 
     func openShipment(id: Int) {
-        selectedTab = .shipping
+        selectedTab = .warehouse
+        warehouseSegment = .shipping
         shippingPath = NavigationPath()
         shippingPath.append(ShippingRoute.detail(id))
     }

@@ -8,6 +8,7 @@ struct RevenueHeroCard: View {
     let revenue: StatDelta
     let currencyCode: String
     let series: [RevenuePoint]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -23,7 +24,9 @@ struct RevenueHeroCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.55)
                         .contentTransition(.numericText(value: revenue.current))
-                        .animation(.spring(duration: 0.45, bounce: 0.20), value: revenue.current)
+                        .animation(reduceMotion ? .easeInOut(duration: 0.2)
+                                                : .spring(duration: 0.45, bounce: 0.20),
+                                   value: revenue.current)
                 }
                 Spacer()
                 deltaPill

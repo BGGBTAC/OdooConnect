@@ -69,6 +69,27 @@ struct LowStockRow: Identifiable, Sendable, Equatable {
     }
 }
 
+/// Converts monetary amounts from arbitrary Odoo currencies into the company
+/// currency using `res.currency.rate` (rate = foreign units per 1 company
+/// unit; the company currency itself has rate 1). companyAmount = amount / rate.
+/// A missing or non-positive rate degrades to identity rather than producing
+/// a NaN/zero — better to show the raw figure than a wrong one.
+struct CurrencyConverter: Sendable, Equatable {
+    private let rateByCurrency: [Int: Double]
+    let companyCurrencyId: Int
+
+    init(rates: [Int: Double], companyCurrencyId: Int) {
+        self.rateByCurrency = rates
+        self.companyCurrencyId = companyCurrencyId
+    }
+
+    func toCompany(_ amount: Double, currencyId: Int) -> Double {
+        if currencyId == companyCurrencyId { return amount }
+        guard let rate = rateByCurrency[currencyId], rate > 0 else { return amount }
+        return amount / rate
+    }
+}
+
 struct ShopKPIs: Sendable, Equatable {
     var revenue: StatDelta = StatDelta(current: 0, previous: 0)
     var orderCount: StatDelta = StatDelta(current: 0, previous: 0)

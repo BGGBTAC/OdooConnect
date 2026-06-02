@@ -20,6 +20,7 @@ struct StockTransferSheet: View {
     @State private var isSubmitting = false
     @State private var error: String?
     @State private var info: String?
+    @State private var showSubmitDialog = false
 
     var body: some View {
         Form {
@@ -28,6 +29,25 @@ struct StockTransferSheet: View {
                     Text(product.name).font(.title3.bold())
                     if let code = product.default_code {
                         Text(code).font(.caption.monospaced()).foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if product.requiresLotOrSerial {
+                Section {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(product.tracking == "serial"
+                                 ? "Seriennummer-pflichtig"
+                                 : "Lot-pflichtig")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Umlagerungen für dieses Produkt verlangen eine Lot/Serien-Zuweisung. Bitte direkt im Odoo-Web-Client durchführen — die App kann den Wizard nicht abschließen.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "barcode.viewfinder")
+                            .foregroundStyle(Theme.warning)
                     }
                 }
             }
@@ -94,7 +114,7 @@ struct StockTransferSheet: View {
 
                 Section {
                     Button {
-                        Task { await submit() }
+                        showSubmitDialog = true
                     } label: {
                         HStack {
                             if isSubmitting { ProgressView() }
@@ -118,6 +138,14 @@ struct StockTransferSheet: View {
         }
         .task { await load() }
         .errorAlert(error: $error)
+        .destructiveConfirm(
+            "Umlagerung ausführen?",
+            isPresented: $showSubmitDialog,
+            confirmLabel: "Umlagern",
+            message: "Die Ware wird in Odoo sofort zwischen den Lagerorten gebucht."
+        ) {
+            Task { await submit() }
+        }
         .alert(
             "Hinweis",
             isPresented: Binding(
@@ -135,6 +163,7 @@ struct StockTransferSheet: View {
             && pickingType != nil
             && quantity > 0
             && quantity <= (sourceQuant?.available_quantity ?? 0)
+            && !product.requiresLotOrSerial
     }
 
     private func load() async {

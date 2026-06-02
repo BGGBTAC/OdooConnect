@@ -144,7 +144,6 @@ struct LoginView: View {
                 .padding(.vertical, Spacing.md + 2)
                 .frame(maxWidth: .infinity)
                 .background(Theme.bannerGradient, in: .capsule)
-                .shadow(color: Theme.brand.opacity(0.45), radius: 16, x: 0, y: 8)
             }
             .buttonStyle(.plain)
             .disabled(validServerURL == nil || oauthInFlight)
